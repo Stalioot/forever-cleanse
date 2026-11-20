@@ -1,10 +1,7 @@
-<img src="media/logo-400.png" width="128" alt="Forever Cleanse logo">
-
-# Forever Cleanse
+<a href="https://ko-fi.com/staliot"><img align="right" src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support me on Ko-fi"></a>
+<img src="media/banner.png" width="600" alt="Forever Cleanse">
 
 Decurse and dispel made easy for **WoW: Forever**.
-
-[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/staliot)
 
 A small grid with one square per group member. When someone has a debuff that **you** can remove, their square lights up with the colour of the debuff type, the debuff icon and its duration. Click the square and the right spell is cast. Works solo, in party and in raid, also in combat.
 

@@ -50,6 +50,13 @@ function writeTga(file, { w, h, px }) {
 }
 
 shoot(400, path.join(root, 'media/logo-400.png'));
+// banner for README and CurseForge: media/banner.html (medallion + wordmark), transparent, waits for the web font
+{
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fcbanner-'));
+  execFileSync(EDGE, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--user-data-dir=${tmp}`, '--default-background-color=00000000',
+    '--virtual-time-budget=8000', '--window-size=600,160', `--screenshot=${path.join(root, 'media/banner.png')}`,
+    'file:///' + path.join(root, 'media/banner.html').replace(/\\/g, '/')], { stdio: 'ignore' });
+}
 const small = path.join(os.tmpdir(), 'fclogo-64.png');
 shoot(64, small);
 fs.mkdirSync(path.join(root, 'addon/ForeverCleanse/Media'), { recursive: true });
