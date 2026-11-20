@@ -41,6 +41,7 @@ METHODS = {
     for _ = 1, opts.maxFrameCount do opts.initializeFrame(obj("AuraButton")) end
   end,
   SetUnit = function(s, u) s.unit = u end,
+  SetAuraGroupCandidateFilters = function(s, _, f) s.filters = f end,
 }
 
 function CreateFrame(kind, name, parent, template)
@@ -53,6 +54,10 @@ function CreateFrame(kind, name, parent, template)
   return o
 end
 function CreateFont() return obj("Font") end
+function CreateFontFamily(_, members) -- names in other alphabets: Barlow for Latin, the game's fonts for the rest
+  for _, m in ipairs(members) do if m.alphabet == "russian" and m.file:find("CYR") then W.cyrillic = true end end
+  return obj("Font")
+end
 UIParent, GameTooltip = obj("Frame"), obj("GameTooltip")
 UISpecialFrames, SlashCmdList = {}, {}
 tinsert = table.insert
@@ -274,6 +279,10 @@ irows[1].scripts.OnMouseWheel(irows[1], -1)
 assert(irows[1].name ~= before, "the wheel scrolls the ignore list")
 resetBtn.scripts.OnClick(resetBtn)
 assert(ForeverCleanseDB.ignore[15822] == "Dreamless Sleep" and ForeverCleanseDB.ignore[12889] == nil, "reset brings the default list back")
+assert(ForeverCleanseDB.ignore[1229451] == nil, "the XP auras are not in the list")
+local ex = _G.ForeverCleanseTile1.aura.filters
+assert(ex and ex.excludeSpellIDs[1229451], "the XP auras are always hidden from the squares")
+assert(W.cyrillic, "fonts carry a Cyrillic member for Russian names")
 -- key strip: the spell's own icon and its types; bar opacity slider
 local sliders = {}
 for _, f in ipairs(W.frames) do if f.kind == "Slider" and f.parent == opt then sliders[#sliders + 1] = f end end

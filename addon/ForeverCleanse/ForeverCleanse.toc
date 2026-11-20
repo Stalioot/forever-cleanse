@@ -4,7 +4,7 @@
 ## Notes-itIT: Decurse e dispel facili: una casella per ogni compagno si accende coi debuff che puoi togliere; cliccala per lanciare la spell giusta. /fc
 ## Author: Staliot
 ## IconTexture: Interface\AddOns\ForeverCleanse\Media\logo
-## Version: 0.2.0
+## Version: 0.2.1
 ## SavedVariables: ForeverCleanseDB
 
 Debuffs.lua

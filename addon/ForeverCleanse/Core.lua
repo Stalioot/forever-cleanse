@@ -20,6 +20,11 @@ local DEFAULTS = {
   seen = {}, -- debuff name -> spell ID, learned out of combat, so the ignore list accepts names
 }
 
+-- WoW: Forever's experience auras: harmless "debuffs" the game lets through as removable (Boosted Rest has the BONUS XP icon).
+-- Always hidden, never shown in the ignore list.
+local XP_AURAS = { [1229451] = "Boosted Rest", [1225478] = "Well Rested", [429960] = "Well-Rested Tracking Aura",
+  [1243969] = "Well Fed XP Boost", [1328127] = "Elixir of Endless Experience" }
+
 -- spell per mouse button (first known name wins) and the debuff types each one removes
 local BUTTONS = {
   MAGE = { { "Remove Lesser Curse" } },
@@ -80,12 +85,25 @@ local function say(msg) print("|cff7fd4b0Forever Cleanse|r " .. msg) end
 local function hex(h) return tonumber(h:sub(1, 2), 16) / 255, tonumber(h:sub(3, 4), 16) / 255, tonumber(h:sub(5, 6), 16) / 255 end
 local function paint(tex, c, a) tex:SetColorTexture(c[1], c[2], c[3], a or c[4] or 1) end
 
+-- Barlow has Latin letters only: names in other alphabets (Russian, Korean, Chinese players) take the game's own fonts
+local OTHER_ALPHABETS = { russian = "Fonts\\FRIZQT___CYR.TTF", korean = "Fonts\\2002.TTF",
+  simplifiedchinese = "Fonts\\ARKai_T.ttf", traditionalchinese = "Fonts\\blei00d.TTF" }
 local fonts = {}
 local function font(file, size)
   local key = file .. size
   if not fonts[key] then
-    local fo = CreateFont("ForeverCleanseFont" .. file:gsub("%W", "") .. size)
-    if fo:SetFont(FONTS .. file, size, "") == false then fo:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF", size, "") end
+    local name = "ForeverCleanseFont" .. file:gsub("%W", "") .. size
+    local fo
+    if CreateFontFamily then
+      local members = { { alphabet = "roman", file = FONTS .. file, height = size, flags = "" } }
+      for alphabet, f in pairs(OTHER_ALPHABETS) do members[#members + 1] = { alphabet = alphabet, file = f, height = size, flags = "" } end
+      local ok, made = pcall(CreateFontFamily, name, members)
+      fo = ok and made or nil
+    end
+    if not fo then
+      fo = CreateFont(name)
+      if fo:SetFont(FONTS .. file, size, "") == false then fo:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF", size, "") end
+    end
     fo:SetShadowOffset(0, 0)
     fonts[key] = fo
   end
@@ -170,6 +188,7 @@ end
 local function ignoreSet()
   local set = {}
   for id in pairs(DB.ignore) do set[id] = true end
+  for id in pairs(XP_AURAS) do set[id] = true end
   set[0] = true -- never empty, the native filter wants a table with content
   return set
 end
@@ -1249,6 +1268,7 @@ ev:SetScript("OnEvent", function(_, e, arg)
     DB = ForeverCleanseDB
     for k, v in pairs(DEFAULTS) do if DB[k] == nil then DB[k] = type(v) == "table" and CopyTable(v) or v end end
     DB.theme = "shadow" -- the light theme was dropped
+    for id in pairs(XP_AURAS) do DB.ignore[id] = nil end -- they are always hidden, not part of the list
     if not L[DB.lang] then DB.lang = "en" end
     return
   end

@@ -1,3 +1,8 @@
+### 0.2.1
+
+- WoW: Forever's experience auras (Boosted Rest, the BONUS XP icon, and the other XP and rested auras) are always hidden: they are not debuffs to remove.
+- Names in other alphabets (Russian, Korean, Chinese players) show with the game's fonts instead of empty boxes.
+
 ### 0.2.0
 
 - Sound alert: the game itself plays a sound when a debuff you can remove lands, also in combat. Pick one of four game sounds (Flag, Ding, Bell, Ready) in the options; turn it off with the check box.
