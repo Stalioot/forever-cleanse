@@ -1,0 +1,42 @@
+# Builds ForeverCleanse.zip and uploads it to CurseForge as a BETA when the version in the .toc changes,
+# or by hand (Actions → CurseForge → Run workflow).
+# Needs: the secret CURSEFORGE_API_TOKEN (https://authors.curseforge.com/#/settings/api-tokens) and PROJECT_ID below.
+# Changelog: addon/changelog.md. A tag cf/v<version> stops the same version from being uploaded twice.
+name: CurseForge
+on:
+  push:
+    branches: [main]
+    paths: [addon/ForeverCleanse/ForeverCleanse.toc]
+  workflow_dispatch:
+permissions:
+  contents: write
+env:
+  PROJECT_ID: "" # CurseForge project ID, set once the project exists
+  GAME_VERSION: "1.60.1" # WoW: Forever version, change when the game updates
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Build and upload
+        env:
+          CF_API_TOKEN: ${{ secrets.CURSEFORGE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          [ -n "$PROJECT_ID" ] || { echo "::notice::PROJECT_ID is not set yet: nothing uploaded"; exit 0; }
+          [ -n "$CF_API_TOKEN" ] || { echo "::error::missing secret CURSEFORGE_API_TOKEN"; exit 1; }
+          VER=$(grep -m1 '^## Version:' addon/ForeverCleanse/ForeverCleanse.toc | sed 's/^## Version: *//' | tr -d '\r')
+          TAG="cf/v$VER"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null; then echo "$TAG already uploaded"; exit 0; fi
+          cp LICENSE addon/ForeverCleanse/LICENSE
+          (cd addon && zip -r ../ForeverCleanse.zip ForeverCleanse)
+          GV=$(curl -sf -H "X-Api-Token: $CF_API_TOKEN" https://wow.curseforge.com/api/game/versions | jq -c --arg n "$GAME_VERSION" '[.[] | select(.name == $n) | .id][:1]')
+          [ "$GV" != "[]" ] || { echo "::error::CurseForge does not know game version $GAME_VERSION"; exit 1; }
+          jq -n --arg v "$VER" --rawfile c addon/changelog.md --argjson gv "$GV" '{
+            displayName: ("Forever Cleanse " + $v), changelog: $c, changelogType: "markdown", releaseType: "beta", gameVersions: $gv }' > meta.json
+          curl -sS --fail-with-body -H "X-Api-Token: $CF_API_TOKEN" -F "metadata=<meta.json" -F "file=@ForeverCleanse.zip" \
+            "https://wow.curseforge.com/api/projects/$PROJECT_ID/upload-file"
+          echo
+          git tag "$TAG" && git push origin "$TAG"
