@@ -1,0 +1,11 @@
+## Interface: 16001
+## Title: Forever Cleanse
+## Notes: Decurse and dispel made easy: a square for each group member lights up with the debuffs you can remove; click it to cast the right spell. /fc
+## Notes-itIT: Decurse e dispel facili: una casella per ogni compagno si accende coi debuff che puoi togliere; cliccala per lanciare la spell giusta. /fc
+## Author: Staliot
+## IconTexture: Interface\AddOns\ForeverCleanse\Media\logo
+## Version: 0.1.0
+## SavedVariables: ForeverCleanseDB
+
+Debuffs.lua
+Core.lua

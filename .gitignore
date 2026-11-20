@@ -1,0 +1,7 @@
+# kept local: in-game probe, HTML test page (contains game icons), design notes, build output
+probe/
+prova/
+.impeccable/
+PERCORSO.md
+PRODUCT.md
+*.zip
