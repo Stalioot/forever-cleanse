@@ -37,7 +37,6 @@ Open them with the gear at the top right of the bar, a right-click on the bar, o
 
 - **Grid**: *Everyone* (all squares, lit when needed) or *Only afflicted* (a square appears only when there is something to remove).
 - **Alerts**: pulsing border when a debuff lands, a **sound** played by the game itself (also in combat, pick one of four), fade out of range.
-- **Enemy buff box** (Priest, Shaman): the buffs of your enemy target you can remove; click to cast Dispel Magic or Purge.
 - **Ignore list**: debuffs you never want to see. Type a name or spell ID, or press **Browse** to pick one from every Curse, Poison, Disease and Magic debuff of the game (all its ranks are added). Dreamless Sleep and Mind Vision are there from the start.
 - **Size** (60–200%, also with the corner grip), **bar opacity**, **lock**, **language** (English, Italiano).
 

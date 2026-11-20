@@ -1,3 +1,7 @@
+### 0.2.2
+
+- The enemy buff box (Purge / Dispel Magic on your target) is gone: the game already shows your target's buffs you can remove.
+
 ### 0.2.1
 
 - WoW: Forever's experience auras (Boosted Rest, the BONUS XP icon, and the other XP and rested auras) are always hidden: they are not debuffs to remove.

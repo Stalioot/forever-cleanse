@@ -10,11 +10,10 @@ local FONTS = "Interface\\AddOns\\ForeverCleanse\\Fonts\\"
 local LOGO = "Interface\\AddOns\\ForeverCleanse\\Media\\logo" -- our own art (media/logo.svg → tools/logo.js)
 local ICONS = "Interface\\Icons\\"
 local FILTER = "HARMFUL|RAID_PLAYER_DISPELLABLE"
-local PURGE_FILTER = "HELPFUL|RAID_PLAYER_DISPELLABLE"
 local PER_ROW, GAP, PAD, KEY_H = 5, 2, 3, 20
 
 local DEFAULTS = {
-  theme = "shadow", mode = "only", pulse = true, sound = true, soundFile = 569200, range = true, purge = true, scale = 100, barAlpha = 82, lock = false, lang = "en",
+  theme = "shadow", mode = "only", pulse = true, sound = true, soundFile = 569200, range = true, scale = 100, barAlpha = 82, lock = false, lang = "en",
   -- harmless debuffs nobody wants removed (spell IDs from the Classic data; more can be added in the options)
   ignore = { [15822] = "Dreamless Sleep", [24360] = "Greater Dreamless Sleep", [2096] = "Mind Vision", [10909] = "Mind Vision" },
   seen = {}, -- debuff name -> spell ID, learned out of combat, so the ignore list accepts names
@@ -39,7 +38,6 @@ local REMOVES = {
   ["Dispel Magic"] = { "Magic" }, ["Abolish Disease"] = { "Disease" }, ["Cure Disease"] = { "Disease" },
   ["Cleanse"] = { "Magic", "Poison", "Disease" }, ["Purify"] = { "Poison", "Disease" },
 }
-local PURGE = { PRIEST = "Dispel Magic", SHAMAN = "Purge" }
 local TYPE_COLOR = { Magic = { 0.2, 0.6, 1 }, Curse = { 0.6, 0, 1 }, Disease = { 0.6, 0.4, 0 }, Poison = { 0, 0.6, 0 } }
 local CLASS_COLOR = { WARRIOR = "c69b6d", PALADIN = "f48cba", HUNTER = "aad372", ROGUE = "fff468", PRIEST = "ffffff", SHAMAN = "0070dd", MAGE = "3fc7eb", WARLOCK = "8788ee", DRUID = "ff7c0a" }
 
@@ -52,8 +50,8 @@ local COPPER = { 0.878, 0.627, 0.455 }
 
 local L = {
   en = { options = "Options", grid = "Grid", everyone = "Everyone", only = "Only afflicted",
-    alerts = "Alerts", pulse = "Pulsing border", sound = "Sound when a debuff lands", sFlag = "Flag", sDing = "Ding", sBell = "Bell", sReady = "Ready", range = "Fade out of range", purge = "Enemy buff box", noPurge = "(your class has no Purge)",
-    ignore = "Ignore these debuffs", add = "Add", size = "Size", barAlpha = "Bar opacity", lock = "Lock position", lang = "Language", target = "Target",
+    alerts = "Alerts", pulse = "Pulsing border", sound = "Sound when a debuff lands", sFlag = "Flag", sDing = "Ding", sBell = "Bell", sReady = "Ready", range = "Fade out of range",
+    ignore = "Ignore these debuffs", add = "Add", size = "Size", barAlpha = "Bar opacity", lock = "Lock position", lang = "Language",
     hint = "Drag to move. Right-click: options.", combat = "In combat: the change waits for the end of the fight.",
     unknown = "Unknown debuff: type its spell ID, or wait until you have seen it once out of combat.",
     noSpell = "Your character has no spell to remove debuffs yet.", noRight = "Right button: your class has no second spell.", help = "/fc options · /fc lock · /fc reset",
@@ -61,12 +59,12 @@ local L = {
     removed = "%s: %s removed.", wrong = "%s does not remove %s: use the other button.", nothing = "%s: nothing to remove.",
     cant = "%s: you cannot remove it, the square stays dark.", far = "%s is out of range.",
     info = "How it works",
-    iLit = "Lit square: a debuff you can remove", iPurge = "Enemy target: click its buffs",
+    iLit = "Lit square: a debuff you can remove",
     browse = "Browse", reset = "Reset", clearAll = "Clear all", search = "Search", pick = "Click a debuff: it goes in the box, then Add.",
     iMove = "Drag the top bar to move", iSize = "Drag the corner to resize", iOpt = "Options: gear or /fc" },
   it = { options = "Opzioni", grid = "Griglia", everyone = "Tutti", only = "Solo chi ha un debuff",
-    alerts = "Avvisi", pulse = "Bordo che pulsa", sound = "Suono quando arriva un debuff", sFlag = "Bandiera", sDing = "Ding", sBell = "Campana", sReady = "Pronti", range = "Sbiadisci fuori portata", purge = "Casella dei buff nemici", noPurge = "(la tua classe non ha Purge)",
-    ignore = "Ignora questi debuff", add = "Aggiungi", size = "Dimensione", barAlpha = "Opacità della barra", lock = "Blocca la posizione", lang = "Lingua", target = "Bersaglio",
+    alerts = "Avvisi", pulse = "Bordo che pulsa", sound = "Suono quando arriva un debuff", sFlag = "Bandiera", sDing = "Ding", sBell = "Campana", sReady = "Pronti", range = "Sbiadisci fuori portata",
+    ignore = "Ignora questi debuff", add = "Aggiungi", size = "Dimensione", barAlpha = "Opacità della barra", lock = "Blocca la posizione", lang = "Lingua",
     hint = "Trascina per spostare. Clic destro: opzioni.", combat = "In combattimento: la modifica arriva a fine combattimento.",
     unknown = "Debuff sconosciuto: scrivi il suo spell ID, o aspetta di vederlo una volta fuori combattimento.",
     noSpell = "Il tuo personaggio non ha ancora spell per togliere debuff.", noRight = "Tasto destro: la tua classe non ha una seconda spell.", help = "/fc opzioni · /fc lock · /fc reset",
@@ -74,7 +72,7 @@ local L = {
     removed = "%s: %s tolta.", wrong = "%s non toglie %s: usa l'altro tasto.", nothing = "%s: niente da togliere.",
     cant = "%s: non puoi toglierlo, la casella resta spenta.", far = "%s è fuori portata.",
     info = "Come funziona",
-    iLit = "Casella accesa: un debuff che puoi togliere", iPurge = "Bersaglio nemico: clicca i suoi buff",
+    iLit = "Casella accesa: un debuff che puoi togliere",
     browse = "Sfoglia", reset = "Ripristina", clearAll = "Togli tutti", search = "Cerca", pick = "Clicca un debuff: va nella casella, poi Aggiungi.",
     iMove = "Trascina la barra per spostare", iSize = "Trascina l'angolo per ingrandire", iOpt = "Opzioni: ingranaggio o /fc" },
 }
@@ -124,7 +122,6 @@ local function resolveSpells()
   local function first(list) for _, n in ipairs(list or {}) do if knows(n) then return n end end end
   spells.left = first(set[1])
   spells.right = set[2] and first(set[2]) or nil -- one spell per button: no second spell, the right button does nothing
-  spells.purge = PURGE[class] and knows(PURGE[class]) and PURGE[class] or nil
 end
 
 -- deferred work: anything touching protected frames waits for the end of combat
@@ -135,7 +132,7 @@ local function later(fn)
 end
 
 ---------------------------------------------------------------- main frame
-local main, key, grid, grip, target
+local main, key, grid, grip
 local tiles = {}
 local toggleOptions -- defined with the options window
 
@@ -485,25 +482,10 @@ local function layout()
   local gw, gh = cols * w + (cols - 1) * GAP, rows * w + (rows - 1) * GAP
   grid:SetSize(gw, gh)
 
-  -- enemy buffs (Purge / Dispel Magic on the target)
-  local showTarget = spells.purge and DB.purge
-  target:SetShown(showTarget and true or false)
   local th = THEMES[DB.theme]
-  if showTarget then
-    target:SetAttribute("type1", "spell"); target:SetAttribute("spell1", spells.purge); target:SetAttribute("unit", "target")
-    target:SetSize(gw, 24)
-    paint(target.edge, th.boxLine); paint(target.bg, th.box)
-    target.label:SetFontObject(font("BarlowCondensed-Medium.ttf", 12)); target.label:SetTextColor(th.soft[1], th.soft[2], th.soft[3])
-    target.label:SetText(tr("target") .. " · " .. spells.purge)
-    target.aura:SetAuraGroupCandidateFilters(target.aura.fcGroup, { excludeSpellIDs = ignoreSet() })
-    target.aura:Show(); target.aura:SetEnabled(true)
-  else
-    target.aura:SetEnabled(false)
-  end
-
   renderKey(key)
   local width = math.max(gw, key.need + 22)
-  main:SetSize(width + PAD * 2, PAD + KEY_H + GAP + gh + (showTarget and (GAP + 24) or 0) + PAD)
+  main:SetSize(width + PAD * 2, PAD + KEY_H + GAP + gh + PAD)
   key:SetWidth(width)
   local only = DB.mode == "only"
   paint(main.bg, th.frame, DB.barAlpha / 100); main.bg:SetShown(not only)
@@ -825,8 +807,8 @@ local function makeOptions()
   lit.bg = lit:CreateTexture(nil, "BACKGROUND", nil, -1); lit.bg:SetPoint("TOPLEFT", lit.edge, 1, -1); lit.bg:SetPoint("BOTTOMRIGHT", lit.edge, -1, 1); lit.bg:SetColorTexture(0.051, 0.051, 0.047, 1)
   lit.ic = lit:CreateTexture(nil, "ARTWORK"); lit.ic:SetSize(18, 18); lit.ic:SetPoint("BOTTOM", lit.edge, "BOTTOM", 0, 3)
   lit.mark = lit:CreateTexture(nil, "ARTWORK", nil, 2); lit.mark:SetSize(6, 6); lit.mark:SetPoint("TOPRIGHT", lit.edge, -2, -2)
-  local left, right, purge = row(), row(), row()
-  mouse(left, "L"); mouse(right, "R"); mouse(purge, "L")
+  local left, right = row(), row()
+  mouse(left, "L"); mouse(right, "R")
   local move = row()
   move.ic = move:CreateTexture(nil, "ARTWORK"); move.ic:SetSize(22, 22); move.ic:SetPoint("LEFT", 11, 0); move.ic:SetTexture("Interface\\CURSOR\\UI-Cursor-Move")
   local size = row()
@@ -863,8 +845,6 @@ local function makeOptions()
     else left.ic:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark"); left.t:SetText(tr("noSpell")) end
     right:SetShown(spells.right ~= nil)
     if spells.right then spellIcon(right.ic, spells.right); right.t:SetText(spells.right .. "\n" .. colours(spells.right)) end
-    purge:SetShown(spells.purge ~= nil)
-    if spells.purge then spellIcon(purge.ic, spells.purge); purge.t:SetText(tr("iPurge")) end
     move.t:SetText(tr("iMove")); size.t:SetText(tr("iSize")); gear.t:SetText(tr("iOpt"))
     local iy = -40
     for _, r in ipairs(info.rows) do
@@ -902,28 +882,25 @@ local function makeOptions()
       end
     end
   end
-  local function check(field, key, enabled)
+  local function check(field, key)
     local b = CreateFrame("Button", nil, opt); b:SetSize(272, 20); b:SetPoint("TOPLEFT", 14, y); y = y - 22
     b.box = b:CreateTexture(nil, "BACKGROUND"); b.box:SetSize(14, 14); b.box:SetPoint("LEFT")
     b.tick = b:CreateTexture(nil, "ARTWORK"); b.tick:SetSize(6, 6); b.tick:SetPoint("CENTER", b.box)
     b.t = b:CreateFontString(nil, "OVERLAY"); b.t:SetFontObject(font("Barlow-Regular.ttf", 13)); b.t:SetPoint("LEFT", b.box, "RIGHT", 8, 0)
-    b:SetScript("OnClick", function() if enabled and not enabled() then return end; DB[field] = not DB[field]
+    b:SetScript("OnClick", function() DB[field] = not DB[field]
       if field == "sound" and DB.sound then PlaySoundFile(DB.soundFile, "Master") end
       apply() end)
     widgets[#widgets + 1] = function()
-      local can = not enabled or enabled()
-      local on = DB[field] and can
+      local on = DB[field]
       if on then b.box:SetColorTexture(acc[1], acc[2], acc[3]) else b.box:SetColorTexture(line[1], line[2], line[3]) end
       b.tick:SetColorTexture(0, 0, 0, on and 1 or 0)
-      b.t:SetText(tr(key) .. (can and "" or "  " .. tr("noPurge")))
-      if can then b.t:SetTextColor(0.843, 0.827, 0.796) else b.t:SetTextColor(0.482, 0.467, 0.439) end
+      b.t:SetText(tr(key)); b.t:SetTextColor(0.843, 0.827, 0.796)
     end
   end
 
   label("grid"); seg("mode", { { "everyone", "everyone" }, { "only", "only" } })
   label("alerts")
   check("pulse", "pulse"); check("sound", "sound"); seg("soundFile", SOUNDS); check("range", "range")
-  check("purge", "purge", function() return spells.purge ~= nil end)
   y = y - 6
 
   -- ignore list: names with a remove button, an edit box to add by name or spell ID
@@ -1171,25 +1148,6 @@ local function build()
   grid = CreateFrame("Frame", nil, main)
   grid:SetPoint("TOPLEFT", key, "BOTTOMLEFT", 0, -GAP)
 
-  target = CreateFrame("Button", "ForeverCleanseTarget", main, "SecureActionButtonTemplate")
-  target:RegisterForClicks("AnyUp", "AnyDown")
-  target:SetPoint("TOPLEFT", grid, "BOTTOMLEFT", 0, -GAP)
-  target.edge = target:CreateTexture(nil, "BACKGROUND", nil, -2); target.edge:SetAllPoints()
-  target.bg = target:CreateTexture(nil, "BACKGROUND", nil, -1); target.bg:SetPoint("TOPLEFT", 1, -1); target.bg:SetPoint("BOTTOMRIGHT", -1, 1)
-  target.label = target:CreateFontString(nil, "OVERLAY"); target.label:SetPoint("LEFT", 5, 0)
-  target.aura = makeContainer(target, PURGE_FILTER, 5, 18, function(b)
-    pcall(function()
-      b:SetSize(18, 18)
-      pcall(b.SetMouseClickEnabled, b, false)
-      local icon = b:CreateTexture(nil, "ARTWORK"); icon:SetAllPoints(b); b:SetIcon(icon)
-    end)
-  end)
-  target.aura:SetSize(5 * 20, 18)
-  target.aura:SetPoint("RIGHT", target, "RIGHT", -3, 0)
-  target.aura:SetUnit("target")
-  target.aura:SetFlowLayoutMaximumLineSize(5 * 20)
-  target:Hide()
-
   -- corner grip: scale the whole frame (out of combat)
   grip = CreateFrame("Button", nil, main)
   grip:SetSize(12, 12); grip:SetPoint("BOTTOMRIGHT", main, "BOTTOMRIGHT", 0, 0)
@@ -1268,6 +1226,7 @@ ev:SetScript("OnEvent", function(_, e, arg)
     DB = ForeverCleanseDB
     for k, v in pairs(DEFAULTS) do if DB[k] == nil then DB[k] = type(v) == "table" and CopyTable(v) or v end end
     DB.theme = "shadow" -- the light theme was dropped
+    DB.purge = nil -- the enemy buff box was dropped in 0.2.2 (the game has its own)
     for id in pairs(XP_AURAS) do DB.ignore[id] = nil end -- they are always hidden, not part of the list
     if not L[DB.lang] then DB.lang = "en" end
     return

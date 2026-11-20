@@ -120,7 +120,6 @@ assert(t1.w == 48 and t1.h == 48, "party squares are 48x48")
 W.members = 1; fire("GROUP_ROSTER_UPDATE")
 assert(_G.ForeverCleanseTile1.parent.w == 48, "solo: grid one column wide, got " .. _G.ForeverCleanseTile1.parent.w)
 W.members = 5; fire("GROUP_ROSTER_UPDATE")
-assert(not _G.ForeverCleanseTarget.shown, "druid has no purge box")
 
 -- raid of 23: rows by group, 36px squares
 W.raid, W.members = true, 23
@@ -197,11 +196,11 @@ assert(db.lock == true, "lock toggles")
 SlashCmdList.FOREVERCLEANSE("reset")
 assert(db.scale == 100 and db.point == nil, "reset")
 
--- shaman: purge box, two buttons
+-- shaman: two buttons, no enemy buff box (dropped: the game has its own)
 W.class, W.known = "SHAMAN", { ["Cure Poison"] = true, ["Cure Disease"] = true, ["Purge"] = true }
 W.raid, W.members = false, 3
 fire("SPELLS_CHANGED")
-assert(_G.ForeverCleanseTarget.shown and _G.ForeverCleanseTarget.attrs.spell1 == "Purge", "shaman gets the purge box")
+assert(_G.ForeverCleanseTarget == nil, "no enemy buff box")
 assert(t1.attrs.spell1 == "Cure Poison" and t1.attrs.spell2 == "Cure Disease", "shaman spells")
 
 -- paladin before Cleanse: Purify on the left button, right does nothing
