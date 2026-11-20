@@ -53,6 +53,6 @@ Download it from CurseForge, or copy the `addon/ForeverCleanse` folder into `Wor
 
 `node tools/test.js` runs `Core.lua` on a small fake WoW (needs [fengari](https://github.com/fengari-lua/fengari) installed in `%LOCALAPPDATA%/fp-lua`).
 
-Fonts: Barlow by Jeremy Tribby, SIL Open Font License (`addon/ForeverCleanse/Fonts/OFL-Barlow.txt`). No Blizzard files are included: game icons are used by name. The logo is an original image generated for this project (`media/logo-sheet.png`); `node tools/logo.js` crops it into `media/logo-400.png` and the in-game texture.
+Fonts: Barlow by Jeremy Tribby, SIL Open Font License (`addon/ForeverCleanse/Fonts/OFL-Barlow.txt`). No Blizzard files are included: game icons are used by name. The logo is original art made for this project (`media/logo-sheet.png`); `node tools/logo.js` crops it into `media/logo-400.png` and the in-game texture, and renders the banner.
 
 License: MIT.
