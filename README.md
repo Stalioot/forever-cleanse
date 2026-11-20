@@ -4,6 +4,8 @@
 
 Decurse and dispel made easy for **WoW: Forever**.
 
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/staliot)
+
 A small grid with one square per group member. When someone has a debuff that **you** can remove, their square lights up with the colour of the debuff type, the debuff icon and its duration. Click the square and the right spell is cast. Works solo, in party and in raid, also in combat.
 
 ## How it works
@@ -30,13 +32,19 @@ Open them with the gear at the top right of the bar, a right-click on the bar, o
 - **Alerts**: pulsing border when a debuff lands, fade out of range.
 - **Enemy buff box** (Priest, Shaman): the buffs of your enemy target you can remove; click to cast Dispel Magic or Purge.
 - **Ignore list**: debuffs you never want to see. Type a name or spell ID, or press **Browse** to pick one from every Curse, Poison, Disease and Magic debuff of the game (all its ranks are added). Dreamless Sleep and Mind Vision are there from the start.
-- **Size** (60–200%, also with the corner grip), **lock**, **language** (English, Italiano).
+- **Size** (60–200%, also with the corner grip), **bar opacity**, **lock**, **language** (English, Italiano).
 
 Commands: `/fc` options · `/fc lock` · `/fc reset` · `/fc help`.
 
 ## Italiano
 
 Una griglia con una casella per ogni compagno: si accende quando qualcuno ha un debuff che **tu** puoi togliere, e un click lancia la spell giusta (sinistro = prima spell, destro = seconda). Funziona da solo, in party e in raid, anche in combattimento. Opzioni con l'ingranaggio in alto a destra o `/fc`; il pulsante **i** spiega tutto in gioco, e l'anteprima cliccabile permette di provarlo senza lanciare spell. Testi in inglese e italiano.
+
+## Support
+
+If Forever Cleanse saves your raid, you can buy me a coffee:
+
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/staliot)
 
 ## Install
 
