@@ -1,44 +1,71 @@
 <!doctype html>
-<!-- source of media/banner.png: node tools/logo.js renders it with Edge (transparent background) -->
+<!-- source of media/banner.png: node tools/logo.js renders it with Edge -->
 <html><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&display=block" rel="stylesheet">
 <style>
 html,body{margin:0;background:transparent}
-.b{width:600px;height:160px;display:flex;align-items:center;gap:26px;padding-left:8px;box-sizing:border-box}
-.medal{position:relative;width:144px;height:144px;flex:none}
+.b{position:relative;width:600px;height:160px;border-radius:10px;overflow:hidden;display:flex;align-items:center;gap:22px;padding-left:6px;box-sizing:border-box;
+  background:radial-gradient(ellipse 60% 120% at 14% 50%, #2a0b45 0%, #12051e 45%, #07030b 100%)}
+.b>svg.fog{position:absolute;inset:0}
+.medal{position:relative;width:156px;height:156px;flex:none}
 .medal svg{position:absolute;inset:0}
-.medal img{position:absolute;left:24px;top:24px;width:96px;height:96px;border-radius:50%;object-fit:cover}
-.word{font-family:Cinzel,serif;color:#ecd6a8;line-height:1}
-.big{font-size:74px;font-weight:500;letter-spacing:.12em;text-shadow:0 2px 6px rgba(0,0,0,.6)}
-.small{font-size:24px;font-weight:600;letter-spacing:1.05em;margin-bottom:10px;padding-left:.2em;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.medal img{position:absolute;left:36px;top:36px;width:84px;height:84px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 2px #12051e, 0 0 14px 4px rgba(160,60,255,.55)}
+.word{position:relative;font-family:Cinzel,serif;color:#ddd0ec;line-height:1;text-shadow:0 0 12px rgba(150,60,255,.55), 0 2px 4px #000}
+.small{font-size:22px;font-weight:600;letter-spacing:1.1em;padding-left:.15em;margin-bottom:10px;color:#a98fc9}
+.big{font-size:70px;font-weight:500;letter-spacing:.11em}
 </style></head><body>
 <div class="b">
+ <svg class="fog" viewBox="0 0 600 160" preserveAspectRatio="none">
+  <defs>
+   <filter id="fog" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".012 .03" numOctaves="4" seed="9"/><feColorMatrix values="0 0 0 0 .45  0 0 0 0 .15  0 0 0 0 .75  1.2 0 0 0 -.62"/></filter>
+   <radialGradient id="vig" cx="50%" cy="50%" r="75%"><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".85"/></radialGradient>
+  </defs>
+  <rect width="600" height="160" filter="url(#fog)" opacity=".55"/>
+  <rect width="600" height="160" fill="url(#vig)"/>
+ </svg>
  <div class="medal">
-  <svg viewBox="0 0 144 144" width="144" height="144">
+  <svg viewBox="0 0 156 156" width="156" height="156">
    <defs>
-    <linearGradient id="br" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9c98f"/><stop offset=".35" stop-color="#9a6a33"/><stop offset=".6" stop-color="#d6ab6c"/><stop offset="1" stop-color="#5a3a17"/></linearGradient>
-    <radialGradient id="in" cx="50%" cy="50%" r="50%"><stop offset=".8" stop-color="#1a0f05"/><stop offset="1" stop-color="#4a3015"/></radialGradient>
+    <filter id="burn" x="-30%" y="-30%" width="160%" height="160%">
+     <feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="3" seed="4" result="n"/>
+     <feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="4"/></filter>
+    <radialGradient id="fl" cx="50%" cy="50%" r="50%"><stop offset=".5" stop-color="#fff0ff"/><stop offset=".6" stop-color="#e08bff"/><stop offset=".75" stop-color="#8f2be0"/><stop offset="1" stop-color="#3a0a66" stop-opacity="0"/></radialGradient>
+    <radialGradient id="fl2" cx="50%" cy="50%" r="50%"><stop offset=".5" stop-color="#b34dff"/><stop offset="1" stop-color="#2a0548" stop-opacity="0"/></radialGradient>
    </defs>
-   <!-- four points like a compass -->
-   <g fill="url(#br)" stroke="#2a1806" stroke-width="1">
-    <path d="M72 0 L80 14 L64 14 Z"/><path d="M72 144 L64 130 L80 130 Z"/><path d="M0 72 L14 64 L14 80 Z"/><path d="M144 72 L130 80 L130 64 Z"/>
-   </g>
-   <circle cx="72" cy="72" r="60" fill="url(#br)" stroke="#2a1806" stroke-width="1.5"/>
-   <circle cx="72" cy="72" r="51" fill="url(#in)" stroke="#2a1806" stroke-width="1.5"/>
-   <g fill="#f3dfb4" opacity=".9" id="rivets"></g>
+   <g id="halo" filter="url(#soft)" opacity=".9"></g>
+   <g id="flames" filter="url(#burn)"></g>
+   <circle cx="78" cy="78" r="44" fill="#0b0312"/>
   </svg>
   <img src="logo-400.png" alt="">
  </div>
  <div class="word"><div class="small">FOREVER</div><div class="big">CLEANSE</div></div>
 </div>
 <script>
-// rivets around the ring
-const g = document.getElementById('rivets');
-for (let i = 0; i < 24; i++) {
-  const a = i / 24 * Math.PI * 2, r = 55.5;
-  const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  c.setAttribute('cx', 72 + Math.cos(a) * r); c.setAttribute('cy', 72 + Math.sin(a) * r); c.setAttribute('r', 1.4);
-  g.appendChild(c);
+// a crown of demonic flame tongues around the medallion: three layers, outer dark to inner bright
+const NS = 'http://www.w3.org/2000/svg', C = 78;
+let seed = 7;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+function crown(group, n, r0, len, fill, jitter) {
+  for (let i = 0; i < n; i++) {
+    const a = (i + rnd() * .4) / n * Math.PI * 2, w = Math.PI * 2 / n * .9;
+    const L = len * (.55 + rnd() * .7), bend = (rnd() - .5) * 1.4;
+    const p = (ang, r) => [C + Math.cos(ang) * r, C + Math.sin(ang) * r];
+    const [x1, y1] = p(a - w / 2, r0), [x2, y2] = p(a + w / 2, r0);
+    const [tx, ty] = p(a + bend * w, r0 + L), [c1x, c1y] = p(a - w * .2, r0 + L * .55), [c2x, c2y] = p(a + w * .25, r0 + L * .5);
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', `M${x1} ${y1} Q${c1x} ${c1y} ${tx} ${ty} Q${c2x} ${c2y} ${x2} ${y2} Z`);
+    path.setAttribute('fill', fill); path.setAttribute('opacity', jitter ? .75 + rnd() * .25 : 1);
+    group.appendChild(path);
+  }
 }
+const halo = document.getElementById('halo'), flames = document.getElementById('flames');
+const disc = (g, r, fill) => { const c = document.createElementNS(NS, 'circle'); c.setAttribute('cx', C); c.setAttribute('cy', C); c.setAttribute('r', r); c.setAttribute('fill', fill); g.appendChild(c); };
+disc(halo, 70, 'url(#fl2)');
+crown(flames, 14, 40, 36, '#4a0e8f', true);
+crown(flames, 18, 41, 26, '#9b34f5', true);
+crown(flames, 22, 42, 14, '#efb3ff', true);
+disc(flames, 46, '#c46bff');
 </script>
 </body></html>
