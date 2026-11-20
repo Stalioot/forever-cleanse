@@ -11,7 +11,7 @@ on:
 permissions:
   contents: write
 env:
-  PROJECT_ID: "" # CurseForge project ID, set once the project exists
+  PROJECT_ID: "1817840" # CurseForge project Forever Cleanse
   GAME_VERSION: "1.60.1" # WoW: Forever version, change when the game updates
 jobs:
   upload:
