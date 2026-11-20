@@ -1,0 +1,43 @@
+<!doctype html>
+<!-- source of media/kofi.png (Ko-fi button next to the banner): node tools/logo.js renders it with Edge -->
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&display=block" rel="stylesheet">
+<style>
+html,body{margin:0;background:transparent}
+.k{position:relative;width:210px;height:160px;border-radius:10px;overflow:hidden;box-sizing:border-box;border:1px solid #3d1b5e;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  background:radial-gradient(ellipse 90% 80% at 50% 35%, #2a0b45 0%, #12051e 55%, #07030b 100%)}
+.k>svg.fog{position:absolute;inset:0}
+.cup{position:relative;width:64px;height:58px}
+.t{position:relative;font-family:Cinzel,serif;text-align:center;line-height:1;color:#ddd0ec;text-shadow:0 2px 4px #000}
+.s{font-size:12px;font-weight:600;letter-spacing:.5em;padding-left:.5em;color:#a98fc9;margin-bottom:6px}
+.b{font-size:34px;font-weight:600;letter-spacing:.04em}
+</style></head><body>
+<div class="k">
+ <svg class="fog" viewBox="0 0 210 160" preserveAspectRatio="none">
+  <defs>
+   <filter id="fog" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".02 .045" numOctaves="4" seed="5"/><feColorMatrix values="0 0 0 0 .45  0 0 0 0 .15  0 0 0 0 .75  1.2 0 0 0 -.62"/></filter>
+   <radialGradient id="vig" cx="50%" cy="50%" r="75%"><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".8"/></radialGradient>
+  </defs>
+  <rect width="210" height="160" filter="url(#fog)" opacity=".5"/>
+  <rect width="210" height="160" fill="url(#vig)"/>
+ </svg>
+ <svg class="cup" viewBox="0 0 64 58">
+  <defs>
+   <linearGradient id="mug" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#efe6f7"/><stop offset="1" stop-color="#9c86b8"/></linearGradient>
+   <filter id="wisp" x="-40%" y="-40%" width="180%" height="180%"><feTurbulence type="fractalNoise" baseFrequency=".08" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/><feGaussianBlur in="d" stdDeviation=".6"/></filter>
+  </defs>
+  <!-- steam: three violet wisps -->
+  <g fill="none" stroke-linecap="round" filter="url(#wisp)">
+   <path d="M20 22 C14 16 24 12 18 4" stroke="#b04bff" stroke-width="3.2"/>
+   <path d="M30 22 C24 14 36 10 29 1" stroke="#e3a6ff" stroke-width="2.6"/>
+   <path d="M40 22 C34 16 44 12 38 5" stroke="#b04bff" stroke-width="3.2"/>
+  </g>
+  <!-- mug -->
+  <path d="M8 26 H50 V44 C50 52 44 56 37 56 H21 C14 56 8 52 8 44 Z" fill="url(#mug)"/>
+  <path d="M50 30 C60 30 60 46 50 46" fill="none" stroke="#c9b6e0" stroke-width="4"/>
+  <ellipse cx="29" cy="27" rx="20" ry="3" fill="#3a1458"/>
+ </svg>
+ <div class="t"><div class="s">SUPPORT ME</div><div class="b">Ko-fi</div></div>
+</div>
+</body></html>

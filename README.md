@@ -1,4 +1,4 @@
-<a href="https://ko-fi.com/staliot"><img align="right" src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support me on Ko-fi"></a>
+<a href="https://ko-fi.com/staliot"><img align="right" src="media/kofi.png" width="210" alt="Support me on Ko-fi"></a>
 <img src="media/banner.png" width="600" alt="Forever Cleanse">
 
 Decurse and dispel made easy for **WoW: Forever**.

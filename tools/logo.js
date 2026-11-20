@@ -50,12 +50,12 @@ function writeTga(file, { w, h, px }) {
 }
 
 shoot(400, path.join(root, 'media/logo-400.png'));
-// banner for README and CurseForge: media/banner.html (medallion + wordmark), transparent, waits for the web font
-{
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fcbanner-'));
+// banner and Ko-fi button for README and CurseForge: media/<name>.html → media/<name>.png, transparent corners, waits for the web font
+for (const [name, w, h] of [['banner', 600, 160], ['kofi', 210, 160]]) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fcpage-'));
   execFileSync(EDGE, ['--headless=new', '--disable-gpu', '--hide-scrollbars', `--user-data-dir=${tmp}`, '--default-background-color=00000000',
-    '--virtual-time-budget=8000', '--window-size=600,160', `--screenshot=${path.join(root, 'media/banner.png')}`,
-    'file:///' + path.join(root, 'media/banner.html').replace(/\\/g, '/')], { stdio: 'ignore' });
+    '--virtual-time-budget=8000', `--window-size=${w},${h}`, `--screenshot=${path.join(root, 'media', name + '.png')}`,
+    'file:///' + path.join(root, 'media', name + '.html').replace(/\\/g, '/')], { stdio: 'ignore' });
 }
 const small = path.join(os.tmpdir(), 'fclogo-64.png');
 shoot(64, small);
