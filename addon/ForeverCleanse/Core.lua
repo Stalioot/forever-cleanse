@@ -8,12 +8,13 @@
 local ADDON, ns = ...
 local FONTS = "Interface\\AddOns\\ForeverCleanse\\Fonts\\"
 local LOGO = "Interface\\AddOns\\ForeverCleanse\\Media\\logo" -- our own art (media/logo.svg → tools/logo.js)
+local ICONS = "Interface\\Icons\\"
 local FILTER = "HARMFUL|RAID_PLAYER_DISPELLABLE"
 local PURGE_FILTER = "HELPFUL|RAID_PLAYER_DISPELLABLE"
 local PER_ROW, GAP, PAD, KEY_H = 5, 2, 3, 20
 
 local DEFAULTS = {
-  theme = "shadow", mode = "only", pulse = true, range = true, purge = true, scale = 100, barAlpha = 82, lock = false, lang = "en",
+  theme = "shadow", mode = "only", pulse = true, sound = true, soundFile = 569200, range = true, purge = true, scale = 100, barAlpha = 82, lock = false, lang = "en",
   -- harmless debuffs nobody wants removed (spell IDs from the Classic data; more can be added in the options)
   ignore = { [15822] = "Dreamless Sleep", [24360] = "Greater Dreamless Sleep", [2096] = "Mind Vision", [10909] = "Mind Vision" },
   seen = {}, -- debuff name -> spell ID, learned out of combat, so the ignore list accepts names
@@ -46,7 +47,7 @@ local COPPER = { 0.878, 0.627, 0.455 }
 
 local L = {
   en = { options = "Options", grid = "Grid", everyone = "Everyone", only = "Only afflicted",
-    alerts = "Alerts", pulse = "Pulsing border", range = "Fade out of range", purge = "Enemy buff box", noPurge = "(your class has no Purge)",
+    alerts = "Alerts", pulse = "Pulsing border", sound = "Sound when a debuff lands", sFlag = "Flag", sDing = "Ding", sBell = "Bell", sReady = "Ready", range = "Fade out of range", purge = "Enemy buff box", noPurge = "(your class has no Purge)",
     ignore = "Ignore these debuffs", add = "Add", size = "Size", barAlpha = "Bar opacity", lock = "Lock position", lang = "Language", target = "Target",
     hint = "Drag to move. Right-click: options.", combat = "In combat: the change waits for the end of the fight.",
     unknown = "Unknown debuff: type its spell ID, or wait until you have seen it once out of combat.",
@@ -59,7 +60,7 @@ local L = {
     browse = "Browse", reset = "Reset", clearAll = "Clear all", search = "Search", pick = "Click a debuff: it goes in the box, then Add.",
     iMove = "Drag the top bar to move", iSize = "Drag the corner to resize", iOpt = "Options: gear or /fc" },
   it = { options = "Opzioni", grid = "Griglia", everyone = "Tutti", only = "Solo chi ha un debuff",
-    alerts = "Avvisi", pulse = "Bordo che pulsa", range = "Sbiadisci fuori portata", purge = "Casella dei buff nemici", noPurge = "(la tua classe non ha Purge)",
+    alerts = "Avvisi", pulse = "Bordo che pulsa", sound = "Suono quando arriva un debuff", sFlag = "Bandiera", sDing = "Ding", sBell = "Campana", sReady = "Pronti", range = "Sbiadisci fuori portata", purge = "Casella dei buff nemici", noPurge = "(la tua classe non ha Purge)",
     ignore = "Ignora questi debuff", add = "Aggiungi", size = "Dimensione", barAlpha = "Opacità della barra", lock = "Blocca la posizione", lang = "Lingua", target = "Bersaglio",
     hint = "Trascina per spostare. Clic destro: opzioni.", combat = "In combattimento: la modifica arriva a fine combattimento.",
     unknown = "Debuff sconosciuto: scrivi il suo spell ID, o aspetta di vederlo una volta fuori combattimento.",
@@ -152,6 +153,20 @@ local function dims(n)
   return 48, 12, 30
 end
 
+-- 2nd-4th debuff on one member: the icon is cut on its centre, one piece per debuff.
+-- Part k's region in the square (x, y from the top-left, width, height): 2 = right half, 3 = bottom-left, 4 = bottom-right.
+local function partGeom(k, w, iconSize)
+  local hb = 3 + iconSize / 2 -- from the bottom edge to the icon's centre
+  if k == 2 then return w / 2, 0, w / 2, w, hb end
+  return (k == 3 and 0 or w / 2), w - hb, w / 2, hb, hb
+end
+-- put a part's icon so that its centre sits on the whole icon's centre; the region's clip keeps only its piece
+local function placePartIcon(icon, region, k, w, iconSize)
+  local px, py, _, _, hb = partGeom(k, w, iconSize)
+  icon:ClearAllPoints(); icon:SetSize(iconSize, iconSize)
+  icon:SetPoint("CENTER", region, "TOPLEFT", w / 2 - px, -((w - hb) - py))
+end
+
 local function ignoreSet()
   local set = {}
   for id in pairs(DB.ignore) do set[id] = true end
@@ -163,9 +178,14 @@ end
 -- (the game draws the type as a border with a corner symbol; it refuses SetTexCoord in combat, so no full-square fill)
 local function decorate(t, b)
   local w, nameSize, iconSize = dims()
-  b:SetSize(w, w)
+  local part = b.fcPart -- 2nd-4th debuff: one piece of the square (partGeom), clipped
+  local _, py, pw, ph = partGeom(part or 2, w, iconSize)
+  if part then b:SetSize(pw, ph) else b:SetSize(w, w) end
   pcall(b.SetMouseClickEnabled, b, false) -- clicks go through to our secure square
   local th = THEMES[DB.theme]
+  if part and not b.fcBg then b.fcBg = b:CreateTexture(nil, "BACKGROUND", nil, 0) end -- hides the pieces underneath (the name above stays)
+  if b.fcBg then b.fcBg:ClearAllPoints(); b.fcBg:SetPoint("TOPLEFT", b, "TOPLEFT", 0, -math.max(0, nameSize + 5 - py)); b.fcBg:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT") end
+  if b.fcBg then paint(b.fcBg, th.box) end
   if not b.fcFill then
     b.fcFill = b:CreateTexture(nil, "BACKGROUND", nil, 1)
     b.fcFill:SetAllPoints(b)
@@ -187,14 +207,15 @@ local function decorate(t, b)
     t.buttons[#t.buttons + 1] = b
   end
   b.fcFill:SetAlpha(1)
-  b.fcIcon:ClearAllPoints(); b.fcIcon:SetSize(iconSize, iconSize); b.fcIcon:SetPoint("BOTTOM", b, "BOTTOM", 0, 3)
+  if part then placePartIcon(b.fcIcon, b, part, w, iconSize)
+  else b.fcIcon:ClearAllPoints(); b.fcIcon:SetSize(iconSize, iconSize); b.fcIcon:SetPoint("BOTTOM", b, "BOTTOM", 0, 3) end
   b.fcCd:ClearAllPoints(); b.fcCd:SetAllPoints(b.fcIcon)
   b.fcCount:SetFontObject(font("BarlowCondensed-SemiBold.ttf", 10)); b.fcCount:SetTextColor(COPPER[1], COPPER[2], COPPER[3])
   b.fcCount:ClearAllPoints(); b.fcCount:SetPoint("BOTTOMRIGHT", b.fcIcon, "BOTTOMRIGHT", 1, -1)
   b.fcName:SetFontObject(font("BarlowCondensed-SemiBold.ttf", nameSize)); b.fcName:SetTextColor(th.ink[1], th.ink[2], th.ink[3])
   b.fcName:ClearAllPoints(); b.fcName:SetPoint("TOPLEFT", b, "TOPLEFT", 3, -3); b.fcName:SetPoint("RIGHT", b, "RIGHT", -14, 0) -- the game puts the type symbol in the top-right corner
   b.fcName:SetText(t.unitName or "")
-  b.fcName:SetShown(DB.mode == "only")
+  b.fcName:SetShown(DB.mode == "only" and not part)
   if DB.pulse and not b.fcPulseOn then b.fcPulseOn = pcall(b.AddAuraShownAnimation, b, b.fcPulse) end
   if not DB.pulse and b.fcPulseOn then pcall(b.RemoveAuraShownAnimation, b, b.fcPulse); b.fcPulseOn = false end
 end
@@ -239,6 +260,19 @@ local function newTile(i)
     if not ok then say("decorate: " .. tostring(err)) end
   end)
   t.aura:SetPoint("TOPLEFT", t, "TOPLEFT")
+  -- debuffs 2-4: for part k, a native row of k slots laid so that slot k falls on its region, clipped to that region:
+  -- slot k exists only when the member has k debuffs (Lua cannot count auras in combat), the game shifts them when one goes
+  t.parts = {}
+  for k = 2, 4 do
+    local clip = CreateFrame("Frame", nil, t.vis)
+    clip:SetClipsChildren(true)
+    clip.aura = makeContainer(clip, FILTER, k, 24, function(b)
+      b.fcPart = k
+      local ok, err = pcall(decorate, t, b)
+      if not ok then say("decorate: " .. tostring(err)) end
+    end)
+    t.parts[k] = clip
+  end
   t:Hide()
   return t
 end
@@ -339,11 +373,47 @@ local function paintTile(t)
   t.name:SetTextColor(th.ink[1], th.ink[2], th.ink[3])
 end
 
+-- sound: in combat Lua cannot see auras, so the game itself plays it when a debuff you can remove lands.
+-- C_UnitAuras.AddAuraSound(trigger, info), trigger 0 = aura added (format as in DBM): one registration per unit and spell ID.
+-- ponytail: a raid Paladin means ~1100 IDs x 40 units; and an AoE curse on 20 people plays 20 overlapping sounds (each registration throttles alone).
+-- the game's own sound files (IDs as used by DBM): PvP flag taken, ding, night elf bell, ready check
+local SOUNDS = { { 569200, "sFlag" }, { 567458, "sDing" }, { 566558, "sBell" }, { 567478, "sReady" } }
+local soundIds, soundKey, soundErr = {}, nil, nil
+local function syncSounds(list)
+  local add = C_UnitAuras and C_UnitAuras.AddAuraSound
+  local remove = C_UnitAuras and (C_UnitAuras.RemoveAuraSound or C_UnitAuras.RemovePrivateAuraAppliedSound)
+  if not add then return end
+  local types, us, ign = {}, {}, {}
+  for _, s in ipairs({ spells.left or "", spells.right or "" }) do for _, ty in ipairs(REMOVES[s] or {}) do types[ty] = true end end
+  for _, u in ipairs(list) do if u then us[#us + 1] = u end end
+  for id in pairs(DB.ignore) do ign[#ign + 1] = id end
+  table.sort(ign)
+  local k = tostring(DB.sound) .. DB.soundFile .. table.concat(us, ",") .. tostring(types.Curse) .. tostring(types.Poison) .. tostring(types.Disease) .. tostring(types.Magic) .. table.concat(ign, ",")
+  if k == soundKey then return end
+  soundKey = k
+  for _, id in ipairs(soundIds) do if remove then pcall(remove, id) end end
+  soundIds, soundErr = {}, nil
+  if not DB.sound then return end
+  for _, ty in ipairs({ "Curse", "Poison", "Disease", "Magic" }) do
+    for _, row in ipairs(types[ty] and ns.DEBUFFS[ty] or {}) do
+      for i = 2, #row do
+        if not DB.ignore[row[i]] then
+          for _, u in ipairs(us) do
+            local ok, id = pcall(add, 0, { unitToken = u, spellID = row[i], soundFileID = DB.soundFile, outputChannel = "Master", throttleSeconds = 2 })
+            if ok and id then soundIds[#soundIds + 1] = id elseif not soundErr then soundErr = u .. ": " .. tostring(ok and "nil" or id) end
+          end
+        end
+      end
+    end
+  end
+end
+
 local function layout()
   if not main then return end
   resolveSpells()
   local w, nameSize = dims()
   local list = units()
+  syncSounds(list)
   local used = 0
   for i, unit in ipairs(list) do
     if unit then
@@ -373,10 +443,24 @@ local function layout()
       t.aura:SetAuraGroupCandidateFilters(t.aura.fcGroup, { excludeSpellIDs = ignoreSet() })
       for _, b in ipairs(t.buttons) do pcall(decorate, t, b) end
       t.aura:Show(); t.aura:SetEnabled(true)
+      for k = 2, 4 do
+        local clip, c = t.parts[k], t.parts[k].aura
+        local px, py, pw, ph = partGeom(k, w, select(3, dims()))
+        local x0 = k == 2 and 0 or -w -- slot k starts at x0 + (k - 1) * w / 2 = px
+        clip:ClearAllPoints(); clip:SetPoint("TOPLEFT", t, "TOPLEFT", px, -py); clip:SetSize(pw, ph)
+        clip:SetFrameLevel(t.aura:GetFrameLevel() + 10 * k)
+        c:ClearAllPoints(); c:SetPoint("TOPLEFT", t, "TOPLEFT", x0, -py)
+        c:SetSize(k * w / 2, ph)
+        c:SetUnit(unit)
+        c:SetFlowLayoutMaximumLineSize(k * w / 2)
+        c:SetAuraGroupLayout(c.fcGroup, { elementWidth = w / 2, elementHeight = ph, elementSpacing = 0, lineSpacing = 0 })
+        c:SetAuraGroupCandidateFilters(c.fcGroup, { excludeSpellIDs = ignoreSet() })
+        c:Show(); c:SetEnabled(true)
+      end
       t:Show()
     end
   end
-  for i = used + 1, #tiles do tiles[i]:Hide(); tiles[i].aura:SetEnabled(false); tiles[i].unit = nil end
+  for i = used + 1, #tiles do tiles[i]:Hide(); tiles[i].aura:SetEnabled(false); for k = 2, 4 do tiles[i].parts[k].aura:SetEnabled(false) end; tiles[i].unit = nil end
   local rows = math.max(1, math.ceil(#list / PER_ROW))
   local cols = math.min(math.max(#list, 1), PER_ROW) -- solo or small party: no empty columns
   local gw, gh = cols * w + (cols - 1) * GAP, rows * w + (rows - 1) * GAP
@@ -411,7 +495,7 @@ local function layout()
 end
 
 ---------------------------------------------------------------- preview: shown while the options are open, fake squares, no spell is cast
-local PV_NAMES = { "Ninu", "Grumok", "Elyra", "Thadrin", "Vessa", "Korgan", "Lirael", "Brannoc", "Syla", "Durnik", "Meriel", "Oswin", "Tazrik",
+local PV_NAMES = { "Nimra","Grumok", "Elyra", "Thadrin", "Vessa", "Korgan", "Lirael", "Brannoc", "Syla", "Durnik", "Meriel", "Oswin", "Tazrik",
   "Ilsa", "Fennick", "Rowan", "Zuhra", "Kael", "Mirth", "Gorrin", "Anwen", "Bolt", "Cerys", "Dagna", "Eamon", "Freya", "Gideon", "Hesk",
   "Iona", "Jorvik", "Kestra", "Lugh", "Maeve", "Nox", "Orla", "Pike", "Quill", "Rusk", "Sable" }
 local PV_CLASSES = { "WARRIOR", "PRIEST", "HUNTER", "ROGUE", "WARLOCK", "DRUID", "SHAMAN", "PALADIN", "MAGE" }
@@ -419,9 +503,16 @@ local PV_DEBUFF = { Curse = { "Curse of Tongues", "Spell_Shadow_CurseOfTounges" 
   Disease = { "Creeping Plague", "Spell_Shadow_CreepingPlague" }, Magic = { "Slow", "Spell_Nature_Slow" } }
 local TYPE_ORDER = { "Curse", "Poison", "Disease", "Magic" }
 local pv
-local pvState = { size = 5, deb = {} }
+local pvState = { size = 5, deb = {} } -- deb[i] = { type, type }: up to two debuffs per member
 
 local function removes(spell, ty) for _, x in ipairs(REMOVES[spell] or {}) do if x == ty then return true end end return false end
+-- a few icons per type, so the pieces of a square with several debuffs look different
+local PV_ICONS = {
+  Curse = { "Spell_Shadow_CurseOfTounges", "Spell_Shadow_CurseOfSargeras", "Spell_Shadow_CurseOfMannoroth", "Spell_Shadow_UnholyStrength", "Spell_Shadow_ChillTouch", "Spell_Shadow_CurseOfAchimonde", "Spell_Shadow_GrimWard", "Spell_Shadow_AuraOfDarkness" },
+  Poison = { "Spell_Nature_CorrosiveBreath", "Ability_Creature_Poison_02", "Ability_PoisonSting", "Ability_Creature_Poison_05", "Ability_Creature_Poison_03" },
+  Disease = { "Spell_Shadow_CreepingPlague", "Spell_Shadow_CallofBone", "Ability_Creature_Disease_02", "Ability_Creature_Disease_03" },
+  Magic = { "Spell_Nature_Slow", "Spell_Frost_FrostNova", "Spell_Shadow_Possession", "Spell_Nature_Polymorph", "Spell_Shadow_ShadowWordPain", "Spell_Frost_FrostBolt02" },
+}
 local function canRemove(ty) return removes(spells.left, ty) or removes(spells.right, ty) end
 local function pvName(i) return i == 1 and (UnitName("player") or "You") or PV_NAMES[i - 1] end
 local function pvFar(i) return DB.range and i > 1 and i % 4 == 0 end
@@ -437,6 +528,13 @@ local function pvButton(parent, w, text)
   return b
 end
 
+-- what the real square shows: only the debuffs you can remove, up to four, the icon cut in one piece each
+local function pvVisible(i)
+  local out = {}
+  for _, ty in ipairs(pvState.deb[i] or {}) do if canRemove(ty) and #out < 4 then out[#out + 1] = ty end end
+  return out
+end
+
 local pvRender
 local function pvTile(i)
   local t = CreateFrame("Button", nil, pv.grid)
@@ -448,30 +546,51 @@ local function pvTile(i)
   t.icon = t:CreateTexture(nil, "ARTWORK", nil, 1)
   t.name = t:CreateFontString(nil, "OVERLAY"); t.name:SetJustifyH("LEFT"); t.name:SetWordWrap(false)
   t.hl = t:CreateTexture(nil, "HIGHLIGHT"); t.hl:SetAllPoints()
+  -- debuffs 2-4: one clipped piece each with its own border and its icon on the whole icon's centre, like the real square
+  t.parts = {}
+  for k = 2, 4 do
+    local p = CreateFrame("Frame", nil, t); p:SetClipsChildren(true); p:SetFrameLevel(t:GetFrameLevel() + k)
+    p.bg = p:CreateTexture(nil, "BACKGROUND", nil, 1); p.bg:SetPoint("BOTTOMRIGHT")
+    p.icon = p:CreateTexture(nil, "ARTWORK", nil, 1)
+    p.lines = {}
+    for n, pts in ipairs({ { "TOPLEFT", "TOPRIGHT" }, { "BOTTOMLEFT", "BOTTOMRIGHT" }, { "TOPLEFT", "BOTTOMLEFT" }, { "TOPRIGHT", "BOTTOMRIGHT" } }) do
+      local l = p:CreateTexture(nil, "ARTWORK", nil, 3); l:SetPoint(pts[1]); l:SetPoint(pts[2])
+      if n <= 2 then l:SetHeight(1) else l:SetWidth(1) end
+      p.lines[n] = l
+    end
+    if k == 2 then p.mark = p:CreateTexture(nil, "ARTWORK", nil, 4); p.mark:SetSize(8, 8); p.mark:SetPoint("TOPRIGHT", -2, -2) end
+    t.parts[k] = p
+  end
+  t.half = t.parts[2]
   t.pulse = t:CreateAnimationGroup()
   t.pulseA = t.pulse:CreateAnimation("Alpha"); t.pulseA:SetTarget(t.edge); t.pulseA:SetDuration(0.55)
   t.pulse:SetLooping("BOUNCE")
   t:SetScript("OnClick", function(_, button)
     local spell = spells.left
     if button == "RightButton" then spell = spells.right end
-    local ty = pvState.deb[i]
+    local vis, list = pvVisible(i), pvState.deb[i] or {}
+    local hit -- index in the member's list of the first visible debuff this spell removes
+    for k, ty in ipairs(list) do if not hit and canRemove(ty) and removes(spell or "", ty) then hit = k end end
     if not spell then pv.msg:SetText(tr(spells.left and "noRight" or "noSpell"))
     elseif pvFar(i) then pv.msg:SetText(tr("far"):format(pvName(i)))
-    elseif not ty or not canRemove(ty) then pv.msg:SetText(tr("nothing"):format(spell))
-    elseif not removes(spell, ty) then pv.msg:SetText(tr("wrong"):format(spell, ty))
-    else pvState.deb[i] = nil; pv.msg:SetText(tr("removed"):format(spell, PV_DEBUFF[ty][1])); pvRender() end
+    elseif not vis[1] then pv.msg:SetText(tr("nothing"):format(spell))
+    elseif not hit then pv.msg:SetText(tr("wrong"):format(spell, vis[1]))
+    else
+      local ty = table.remove(list, hit)
+      if not list[1] then pvState.deb[i] = nil end
+      pv.msg:SetText(tr("removed"):format(spell, PV_DEBUFF[ty][1])); pvRender()
+    end
   end)
   pv.tiles[i] = t
   return t
 end
 
--- put a debuff of this type on a random member who has none
+-- put a debuff of this type on a random member (no limit: past the fourth they wait their turn, as in the game)
 local function pvAdd(ty)
-  local free = {}
-  for i = 1, pvState.size do if not pvState.deb[i] then free[#free + 1] = i end end
-  if #free == 0 then return end
-  local i = free[math.random(#free)]
-  pvState.deb[i] = ty
+  local i = math.random(pvState.size)
+  pvState.deb[i] = pvState.deb[i] or {}
+  table.insert(pvState.deb[i], ty)
+  if DB.sound and canRemove(ty) then PlaySoundFile(DB.soundFile, "Master") end
   pv.msg:SetText(canRemove(ty) and (pvName(i) .. ": " .. PV_DEBUFF[ty][1]) or tr("cant"):format(pvName(i) .. ", " .. ty))
   pvRender()
 end
@@ -542,8 +661,9 @@ pvRender = function()
   for i = 1, 40 do
     local t = pv.tiles[i] or (i <= n and pvTile(i))
     if t and i <= n then
-      local ty = pvState.deb[i]
-      local lit = ty and canRemove(ty)
+      local vis = pvVisible(i)
+      local ty = vis[1]
+      local lit = ty ~= nil
       t:ClearAllPoints()
       t:SetPoint("TOPLEFT", pv.grid, "TOPLEFT", ((i - 1) % PER_ROW) * (w + GAP), -math.floor((i - 1) / PER_ROW) * (w + GAP))
       t:SetSize(w, w)
@@ -554,8 +674,22 @@ pvRender = function()
       t.edge:SetShown(show); t.bg:SetShown(show); t.name:SetShown(show); t.tick:SetShown(show and not only)
       t.mark:SetShown(lit and true or false)
       t.icon:SetShown(lit and true or false)
-      if lit then t.icon:SetTexture("Interface\\Icons\\" .. PV_DEBUFF[ty][2]) end
+      if lit then t.icon:SetTexture("Interface\\Icons\\" .. PV_ICONS[ty][(i - 1) % #PV_ICONS[ty] + 1]) end
       t.icon:ClearAllPoints(); t.icon:SetSize(iconSize, iconSize); t.icon:SetPoint("BOTTOM", 0, 3)
+      for k = 2, 4 do
+        local p, tyk = t.parts[k], vis[k]
+        p:SetShown(tyk ~= nil)
+        if tyk then
+          local c = TYPE_COLOR[tyk]
+          local px, py, pw, ph = partGeom(k, w, iconSize)
+          p:ClearAllPoints(); p:SetPoint("TOPLEFT", t, "TOPLEFT", px, -py); p:SetSize(pw, ph)
+          p.bg:SetPoint("TOPLEFT", 0, -math.max(0, nameSize + 5 - py)); paint(p.bg, th.box)
+          for _, l in ipairs(p.lines) do l:SetColorTexture(c[1], c[2], c[3], 1) end
+          if p.mark then p.mark:SetColorTexture(c[1], c[2], c[3], 1) end
+          placePartIcon(p.icon, p, k, w, iconSize)
+          p.icon:SetTexture(ICONS .. PV_ICONS[tyk][(i + k) % #PV_ICONS[tyk] + 1])
+        end
+      end
       t.name:SetFontObject(font("BarlowCondensed-SemiBold.ttf", nameSize)); t.name:SetTextColor(th.ink[1], th.ink[2], th.ink[3])
       t.name:ClearAllPoints(); t.name:SetPoint("TOPLEFT", 3, -3); t.name:SetPoint("RIGHT", -12, 0)
       t.name:SetText(pvName(i))
@@ -595,7 +729,7 @@ local function pvShow()
   if not next(pvState.deb) then
     local slot = 2
     for _, ty in ipairs(TYPE_ORDER) do
-      if canRemove(ty) and slot <= 4 then pvState.deb[slot] = ty; slot = slot + 2 end
+      if canRemove(ty) and slot <= 4 then pvState.deb[slot] = { ty }; slot = slot + 2 end
     end
   end
   pv.msg:SetText("")
@@ -737,7 +871,7 @@ local function makeOptions()
       local b = CreateFrame("Button", nil, opt); b:SetSize(w - (i < #choices and 1 or 0), 24); b:SetPoint("TOPLEFT", 14 + (i - 1) * w, y)
       b.bg = b:CreateTexture(nil, "BACKGROUND"); b.bg:SetAllPoints()
       b.t = b:CreateFontString(nil, "OVERLAY"); b.t:SetFontObject(font("BarlowCondensed-SemiBold.ttf", 13)); b.t:SetPoint("CENTER")
-      b:SetScript("OnClick", function() DB[field] = c[1]; apply() end)
+      b:SetScript("OnClick", function() DB[field] = c[1]; if field == "soundFile" then PlaySoundFile(c[1], "Master") end; apply() end)
       bs[i] = b
     end
     y = y - 32
@@ -755,7 +889,9 @@ local function makeOptions()
     b.box = b:CreateTexture(nil, "BACKGROUND"); b.box:SetSize(14, 14); b.box:SetPoint("LEFT")
     b.tick = b:CreateTexture(nil, "ARTWORK"); b.tick:SetSize(6, 6); b.tick:SetPoint("CENTER", b.box)
     b.t = b:CreateFontString(nil, "OVERLAY"); b.t:SetFontObject(font("Barlow-Regular.ttf", 13)); b.t:SetPoint("LEFT", b.box, "RIGHT", 8, 0)
-    b:SetScript("OnClick", function() if enabled and not enabled() then return end; DB[field] = not DB[field]; apply() end)
+    b:SetScript("OnClick", function() if enabled and not enabled() then return end; DB[field] = not DB[field]
+      if field == "sound" and DB.sound then PlaySoundFile(DB.soundFile, "Master") end
+      apply() end)
     widgets[#widgets + 1] = function()
       local can = not enabled or enabled()
       local on = DB[field] and can
@@ -768,7 +904,7 @@ local function makeOptions()
 
   label("grid"); seg("mode", { { "everyone", "everyone" }, { "only", "only" } })
   label("alerts")
-  check("pulse", "pulse"); check("range", "range")
+  check("pulse", "pulse"); check("sound", "sound"); seg("soundFile", SOUNDS); check("range", "range")
   check("purge", "purge", function() return spells.purge ~= nil end)
   y = y - 6
 
@@ -1141,5 +1277,6 @@ SlashCmdList.FOREVERCLEANSE = function(msg)
   elseif msg == "reset" then
     later(function() DB.point, DB.scale = nil, 100; main:ClearAllPoints(); main:SetPoint("CENTER", UIParent, "CENTER", -300, 120); layout() end)
   elseif msg == "help" then say(tr("help"))
+  elseif msg == "sound" then say("sound: " .. #soundIds .. " registrations" .. (soundErr and (", first error " .. soundErr) or "")) -- for testing
   else toggleOptions() end
 end

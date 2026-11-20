@@ -1,0 +1,181 @@
+<!doctype html>
+<!-- source of media/slide-N.png (CurseForge and GitHub gallery): node tools/gallery.js renders each slide (#1..#6) with Edge.
+     In-game screenshots: media/shot-*.png (addon size 200%, character names never in view). -->
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&display=block" rel="stylesheet">
+<style>
+@font-face{font-family:Barlow;src:url(../addon/ForeverCleanse/Fonts/Barlow-Regular.ttf)}
+@font-face{font-family:Barlow;font-weight:600;src:url(../addon/ForeverCleanse/Fonts/Barlow-SemiBold.ttf)}
+@font-face{font-family:BarlowC;src:url(../addon/ForeverCleanse/Fonts/BarlowCondensed-SemiBold.ttf)}
+html,body{margin:0;background:#07030b}
+.s{position:relative;width:1280px;height:720px;overflow:hidden;font-family:Barlow,sans-serif;color:#e8e1f0;
+  background:radial-gradient(ellipse 55% 80% at 18% 30%, #2a0b45 0%, #12051e 50%, #07030b 100%)}
+.brand{position:absolute;left:64px;top:44px;display:flex;align-items:center;gap:14px}
+.brand img{width:44px;height:44px;border-radius:50%;box-shadow:0 0 0 2px #12051e,0 0 12px 3px rgba(160,60,255,.5)}
+.brand span{font-family:Cinzel,serif;font-weight:600;font-size:17px;letter-spacing:.42em;color:#bba5d6;text-shadow:0 0 10px rgba(150,60,255,.5)}
+.text{position:absolute;left:64px;top:150px;width:430px}
+.n{font-family:BarlowC;font-size:18px;color:#7fd4b0;letter-spacing:.12em}
+h1{font-family:BarlowC;font-weight:normal;font-size:60px;line-height:1.02;margin:10px 0 22px;color:#f4eefb;text-shadow:0 2px 18px rgba(0,0,0,.6)}
+p{font-size:21px;line-height:1.5;margin:0;color:#c6bad6}
+p b{color:#f1ecf7;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}
+.chips span{font-family:BarlowC;font-size:17px;padding:6px 12px;border:1px solid rgba(127,212,176,.45);color:#a9e6cd;border-radius:3px;background:rgba(127,212,176,.06)}
+.shot{position:absolute;border-radius:6px;box-shadow:0 0 0 1px rgba(200,170,255,.18),0 24px 60px rgba(0,0,0,.65)}
+.cls{margin-top:26px;border-collapse:collapse;font-size:17px;width:100%}
+.cls td{padding:5px 0;border-bottom:1px solid rgba(255,255,255,.07);color:#c6bad6}
+.cls td:first-child{color:#f1ecf7;font-weight:600;width:84px}
+.zoom{position:absolute;width:160px;height:160px;border-radius:4px;background-repeat:no-repeat;box-shadow:0 0 0 1px rgba(200,170,255,.18),0 20px 50px rgba(0,0,0,.6)}
+.cap{position:absolute;font-family:BarlowC;font-size:22px;color:#a9e6cd;text-align:center;width:160px}
+.lbl{position:absolute;font-family:BarlowC;font-size:19px;color:#a9e6cd;letter-spacing:.06em}
+.slide{display:none}.slide.on{display:block}
+/* dot grid fading out towards the edges */
+.s::before{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(190,140,255,.22) 1px,transparent 1.6px) 0 0/22px 22px;-webkit-mask:radial-gradient(ellipse 90% 90% at 70% 50%,#000 0%,transparent 75%)}
+.slide{position:relative;z-index:2}.brand{z-index:2}
+/* in-game panels (Core.lua makeOptions), 1 px = 1 UI unit, scaled as a whole */
+.ui{position:absolute;transform:scale(1.05);transform-origin:top left}
+.ui>*,.pnl>*{position:absolute}
+.pnl{background:#030303;outline:1px solid #3a3936;box-shadow:0 24px 60px rgba(0,0,0,.65)}
+.ttl{font-family:BarlowC;font-size:16px;line-height:20px;color:#f1eee8;white-space:nowrap}
+.ib{width:20px;height:20px;background:#7fd4b0;color:#000;font:600 13px/20px Barlow;text-align:center}
+.xx{width:20px;height:20px;color:#a5a199;font:600 14px/20px Barlow;text-align:center}
+.lab{left:14px;font-family:BarlowC;font-size:13px;line-height:16px;color:#a9d8c5}
+.seg{height:24px;font-family:BarlowC;font-size:13px;line-height:24px;text-align:center}
+.seg.on{background:#7fd4b0;color:#000}.seg.off{background:rgba(58,57,54,.45);color:#a5a199}
+.chk{left:14px;width:272px;height:20px;font:13px/20px Barlow;color:#d7d3cb;padding-left:22px;box-sizing:border-box;white-space:nowrap}
+.chk i{position:absolute;left:0;top:3px;width:14px;height:14px;background:#3a3936}
+.chk.on i{background:#7fd4b0}.chk.on i::after{content:"";position:absolute;left:4px;top:4px;width:6px;height:6px;background:#000}
+.chk.dis{color:#7b7770}
+.ign{left:14px;width:272px;height:18px;background:#1a1a18;font:12px/18px Barlow;color:#d7d3cb;padding-left:6px;box-sizing:border-box}
+.ign s{text-decoration:none;color:#7b7770;margin-left:3px}
+.ign u{text-decoration:none;position:absolute;right:6px;font:600 12px/18px Barlow;color:#a5a199}
+.btn{height:22px;background:#1a1a18;color:#f1eee8;font-family:BarlowC;font-size:13px;line-height:22px;text-align:center}
+.edit{left:14px;width:200px;height:22px;background:#0d0d0c}
+.sld{left:14px;width:220px;height:14px}
+.sld::before{content:"";position:absolute;left:0;right:0;top:5px;height:4px;background:#3a3936}
+.sld b{position:absolute;top:0;width:10px;height:14px;background:#7fd4b0}
+.val{left:244px;font-family:BarlowC;font-size:13px;line-height:18px;color:#e0a074}
+.row{left:64px;width:212px;height:30px;display:flex;align-items:center;font:13px/15px Barlow;color:#d7d3cb}
+.icons{left:2px;top:34px;width:58px;height:180px;background:url(shot-options.png) -328px -57px/632px 657px no-repeat}
+</style></head><body>
+<div class="s">
+ <div class="brand"><img src="logo-400.png" alt=""><span>FOREVER CLEANSE</span></div>
+
+ <div class="slide" id="s1">
+  <div class="text">
+   <div class="n">01 · THE GRID</div>
+   <h1>Decurse and dispel,<br>made easy.</h1>
+   <p>One square per group member. When someone has a debuff <b>you</b> can remove, the square lights up in its colour. Click it and the right spell is cast.</p>
+   <div class="chips"><span>Solo</span><span>Party</span><span>Raid</span><span>Works in combat</span></div>
+  </div>
+  <img class="shot" src="shot-mixed.png" style="left:540px;top:215px;width:700px">
+ </div>
+
+ <div class="slide" id="s2">
+  <div class="text">
+   <div class="n">02 · CLICK TO REMOVE</div>
+   <h1>Two buttons.<br>Every cure.</h1>
+   <p>Left click casts your first spell, right click the second. The bar on top shows your spell and the colours it removes.</p>
+   <table class="cls">
+    <tr><td>Mage</td><td>Remove Lesser Curse</td></tr>
+    <tr><td>Druid</td><td>Remove Curse · Abolish Poison</td></tr>
+    <tr><td>Priest</td><td>Dispel Magic · Abolish Disease</td></tr>
+    <tr><td>Paladin</td><td>Purify, then Cleanse</td></tr>
+    <tr><td>Shaman</td><td>Cure Poison · Cure Disease</td></tr>
+   </table>
+  </div>
+  <img class="shot" src="shot-single.png" style="left:560px;top:255px;width:680px">
+ </div>
+
+ <div class="slide" id="s3">
+  <div class="text">
+   <div class="n">03 · SEVERAL DEBUFFS</div>
+   <h1>Up to four debuffs<br>in one square.</h1>
+   <p>They share the icon, one piece each in its own colour. Remove one and the next one moves in.</p>
+  </div>
+  <!-- squares cut from the screenshots: single (shot-single, 94 px), 2 and 4 (shot-pieces, 96 px), 3 (shot-mixed, 82 px) -->
+  <div class="zoom" style="left:540px;top:270px;background-image:url(shot-single.png);background-size:907px 267px;background-position:-192px -90px"></div>
+  <div class="zoom" style="left:720px;top:270px;background-image:url(shot-pieces.png);background-size:875px 245px;background-position:-173px -80px"></div>
+  <div class="zoom" style="left:900px;top:270px;background-image:url(shot-mixed.png);background-size:1093px 453px;background-position:-232px -287px"></div>
+  <div class="zoom" style="left:1080px;top:270px;background-image:url(shot-pieces.png);background-size:875px 245px;background-position:-673px -80px"></div>
+  <div class="cap" style="left:540px;top:450px">1 debuff</div>
+  <div class="cap" style="left:720px;top:450px">2 debuffs</div>
+  <div class="cap" style="left:900px;top:450px">3 debuffs</div>
+  <div class="cap" style="left:1080px;top:450px">4 debuffs</div>
+ </div>
+
+ <div class="slide" id="s4">
+  <div class="text">
+   <div class="n">04 · RAID</div>
+   <h1>From party<br>to raid.</h1>
+   <p>5, 10 or 40 members, five per row, each raid group on its own row. Members <b>out of range</b> fade out, so you know who you can reach.</p>
+  </div>
+  <img class="shot" src="shot-raid.png" style="left:700px;top:64px;height:592px">
+ </div>
+
+ <div class="slide" id="s5">
+  <div class="text">
+   <div class="n">05 · TWO GRID MODES</div>
+   <h1>Only the afflicted,<br>or everyone.</h1>
+   <p><b>Only afflicted</b>: a square appears when there is something to remove. <b>Everyone</b>: every member has a square, with the class colour underneath, lit when needed.</p>
+  </div>
+  <div class="lbl" style="left:620px;top:52px">ONLY AFFLICTED</div>
+  <img class="shot" src="shot-only.png" style="left:620px;top:82px;width:540px">
+  <div class="lbl" style="left:620px;top:380px">EVERYONE</div>
+  <img class="shot" src="shot-everyone.png" style="left:620px;top:410px;width:540px">
+ </div>
+
+ <div class="slide" id="s6">
+  <div class="text">
+   <div class="n">06 · OPTIONS</div>
+   <h1>A few options.<br>A live preview.</h1>
+   <p>Pulse, sound, range fade, an ignore list with every debuff of the game, size and opacity. While the options are open, a <b>clickable preview</b> lets you try it all. No spell is cast.</p>
+   <div class="chips"><span>/fc</span></div>
+  </div>
+  <!-- the options and How it works panels redrawn from Core.lua (same sizes, colours, fonts), crisp at any scale;
+       the game's icons of the How it works column come from shot-options.png (options drawn 1:1 in game) -->
+  <div class="ui" style="left:540px;top:40px">
+   <div class="pnl" style="left:0;top:0;width:300px;height:600px">
+    <img src="logo-400.png" style="left:12px;top:11px;width:20px;height:20px;border-radius:50%">
+    <div class="ttl" style="left:40px;top:12px">Forever Cleanse · Options</div>
+    <div class="ib" style="left:248px;top:10px">i</div>
+    <div class="xx" style="left:272px;top:10px">x</div>
+    <div class="lab" style="top:40px">Grid</div>
+    <div class="seg off" style="top:58px;left:14px;width:135px">Everyone</div><div class="seg on" style="top:58px;left:150px;width:136px">Only afflicted</div>
+    <div class="lab" style="top:90px">Alerts</div>
+    <div class="chk on" style="top:108px"><i></i>Pulsing border</div>
+    <div class="chk on" style="top:130px"><i></i>Sound when a debuff lands</div>
+    <div class="seg off" style="top:152px;left:14px;width:67px">Flag</div><div class="seg on" style="top:152px;left:82px;width:67px">Ding</div><div class="seg off" style="top:152px;left:150px;width:67px">Bell</div><div class="seg off" style="top:152px;left:218px;width:68px">Ready</div>
+    <div class="chk on" style="top:184px"><i></i>Fade out of range</div>
+    <div class="chk dis" style="top:206px"><i></i>Enemy buff box&nbsp; (your class has no Purge)</div>
+    <div class="lab" style="top:234px">Ignore these debuffs</div>
+    <div class="ign" style="top:252px">Dreamless Sleep <s>15822</s><u>x</u></div>
+    <div class="ign" style="top:271px">Greater Dreamless Sleep <s>24360</s><u>x</u></div>
+    <div class="ign" style="top:290px">Mind Vision <s>2096 +1</s><u>x</u></div>
+    <div class="btn" style="top:370px;left:14px;width:66px">Reset</div><div class="btn" style="top:370px;left:84px;width:80px">Clear all</div><div class="btn" style="top:370px;left:220px;width:66px">Browse</div>
+    <div class="edit" style="top:396px"></div><div class="btn" style="top:396px;left:220px;width:66px">Add</div>
+    <div class="lab" style="top:430px">Size</div>
+    <div class="sld" style="top:450px"><b style="left:105px"></b></div><div class="val" style="top:448px">130%</div>
+    <div class="lab" style="top:474px">Bar opacity</div>
+    <div class="sld" style="top:494px"><b style="left:42px"></b></div><div class="val" style="top:492px">20%</div>
+    <div class="chk" style="top:518px"><i></i>Lock position</div>
+    <div class="lab" style="top:544px">Language</div>
+    <div class="seg on" style="top:562px;left:14px;width:135px">English</div><div class="seg off" style="top:562px;left:150px;width:136px">Italiano</div>
+   </div>
+   <div class="pnl" style="left:308px;top:0;width:290px;height:218px">
+    <div class="ttl" style="left:14px;top:12px">How it works</div>
+    <div class="icons"></div>
+    <div class="row" style="top:40px"><div>Lit square: a debuff you can remove</div></div>
+    <div class="row" style="top:74px"><div>Remove Lesser Curse<br><span style="color:#9900ff">Curse</span></div></div>
+    <div class="row" style="top:108px"><div>Drag the top bar to move</div></div>
+    <div class="row" style="top:142px"><div>Drag the corner to resize</div></div>
+    <div class="row" style="top:176px"><div>Options: gear or /fc</div></div>
+   </div>
+   <img class="shot" src="shot-preview.png" style="left:308px;top:236px;width:350px">
+  </div>
+ </div>
+</div>
+<script>
+const n = (location.hash || '#1').slice(1);
+document.getElementById('s' + n).classList.add('on');
+</script>
+</body></html>

@@ -1,6 +1,15 @@
 <a href="https://ko-fi.com/staliot"><img align="right" src="media/kofi.png" width="210" alt="Support me on Ko-fi"></a>
 <img src="media/banner.png" width="600" alt="Forever Cleanse">
 
+<p>
+  <img src="media/slide-1.png" width="400" alt="The grid: one square per member, lit in the colour of the debuff you can remove">
+  <img src="media/slide-2.png" width="400" alt="Left and right click cast your two spells">
+  <img src="media/slide-3.png" width="400" alt="Up to four debuffs share one square">
+  <img src="media/slide-4.png" width="400" alt="Raid: forty members, out of range members fade">
+  <img src="media/slide-5.png" width="400" alt="Two grid modes: only the afflicted, or everyone">
+  <img src="media/slide-6.png" width="400" alt="Options and live preview">
+</p>
+
 Decurse and dispel made easy for **WoW: Forever**.
 
 A small grid with one square per group member. When someone has a debuff that **you** can remove, their square lights up with the colour of the debuff type, the debuff icon and its duration. Click the square and the right spell is cast. Works solo, in party and in raid, also in combat.
@@ -9,6 +18,7 @@ A small grid with one square per group member. When someone has a debuff that **
 
 - **One square per member**, 5 per row in group order. In a raid each group starts a new row.
 - **Lit squares**: a border in the type colour (Curse purple, Poison green, Disease brown, Magic blue), the type symbol in the corner, the debuff icon and its duration. Only the debuffs your class can remove are shown.
+- **Several debuffs on one member**: up to four share the icon, one piece each in its own colour (half and half, then quarters). When one is removed the next one moves in.
 - **Click to remove**: left button = your first spell, right button = your second one. The bar at the top shows which button removes which colours. Classes with a single spell use the left button.
 
 | Class | Left button | Right button |
@@ -26,7 +36,7 @@ A small grid with one square per group member. When someone has a debuff that **
 Open them with the gear at the top right of the bar, a right-click on the bar, or `/fc`. The **i** button explains everything in game. While the options are open, a clickable **preview** sits over the grid: add test debuffs, click the squares, try 5 / 10 / 40 members. No spell is cast.
 
 - **Grid**: *Everyone* (all squares, lit when needed) or *Only afflicted* (a square appears only when there is something to remove).
-- **Alerts**: pulsing border when a debuff lands, fade out of range.
+- **Alerts**: pulsing border when a debuff lands, a **sound** played by the game itself (also in combat, pick one of four), fade out of range.
 - **Enemy buff box** (Priest, Shaman): the buffs of your enemy target you can remove; click to cast Dispel Magic or Purge.
 - **Ignore list**: debuffs you never want to see. Type a name or spell ID, or press **Browse** to pick one from every Curse, Poison, Disease and Magic debuff of the game (all its ranks are added). Dreamless Sleep and Mind Vision are there from the start.
 - **Size** (60–200%, also with the corner grip), **bar opacity**, **lock**, **language** (English, Italiano).

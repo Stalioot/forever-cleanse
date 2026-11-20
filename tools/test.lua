@@ -20,6 +20,7 @@ METHODS = {
   Show = function(s) s.shown = true end, Hide = function(s) s.shown = false end,
   SetShown = function(s, v) s.shown = not not v end, IsShown = function(s) return s.shown end,
   SetSize = function(s, w, h) s.w, s.h = w, h end, SetWidth = function(s, w) s.w = w end, SetHeight = function(s, h) s.h = h end,
+  GetFrameLevel = function() return 1 end,
   GetWidth = function(s) return s.w end, GetHeight = function(s) return s.h end,
   SetPoint = function(s, ...)
     if W.combat and s.secure then error("SetPoint on a protected frame in combat") end
@@ -77,7 +78,11 @@ AnchorUtil = { FlowLayoutAxis = { Horizontal = 1 }, FlowDirection = { Right = 1,
 C_AddOns = { IsAddOnLoaded = function() return true end, LoadAddOn = function() end }
 C_Timer = { NewTicker = function(_, f) W.tick = f end }
 C_Secrets = { ShouldAurasBeSecret = function() return W.combat end }
-C_UnitAuras = { GetAuraDataByIndex = function(_, i) if i == 1 then return { name = "Curse of Tongues", spellId = 12889 } end end }
+W.sounds, W.played, W.soundN = {}, {}, 0
+C_UnitAuras = { GetAuraDataByIndex = function(_, i) if i == 1 then return { name = "Curse of Tongues", spellId = 12889 } end end,
+  AddAuraSound = function(trigger, info) assert(trigger == 0, "trigger: aura added"); W.soundN = W.soundN + 1; W.sounds[W.soundN] = info; return W.soundN end,
+  RemoveAuraSound = function(id) W.sounds[id] = nil end }
+function PlaySoundFile(f) W.played[#W.played + 1] = f end
 W.knownIds = {}
 local ids = {}
 C_Spell = { GetSpellInfo = function(n)
@@ -118,6 +123,14 @@ fire("GROUP_ROSTER_UPDATE")
 assert(shownTiles() == 23, "raid 23: 23 squares, got " .. shownTiles())
 assert(_G.ForeverCleanseTile6.attrs.unit == "raid6" and _G.ForeverCleanseTile6.point[4] == 0, "group 2 starts a new row at x=0")
 assert(_G.ForeverCleanseTile1.w == 36, "raid squares are 36")
+local parts = { 0, 0, 0, 0 }
+for _, b in ipairs(_G.ForeverCleanseTile1.buttons) do
+  if b.fcPart then parts[b.fcPart] = parts[b.fcPart] + 1; assert(b.w == 18 and b.h == (b.fcPart == 2 and 36 or 13), "debuff piece " .. b.fcPart .. ": " .. b.w .. "x" .. b.h) end
+end
+assert(parts[2] == 2 and parts[3] == 3 and parts[4] == 4, "pieces 2-4: rows of 2, 3 and 4 slots")
+local P = _G.ForeverCleanseTile1.parts
+assert(P[2].w == 18 and P[2].h == 36 and P[3].h == 13 and P[4].point[4] == 18, "clips: right half, bottom-left, bottom-right")
+assert(P[3].aura.point[4] == -36 and P[4].aura.point[4] == -36 and P[2].aura.point[4] == 0, "slot k lands on its clip")
 
 -- in combat nothing protected may change: roster change is deferred, then applied
 W.combat = true
@@ -152,6 +165,23 @@ for _, t in pairs(pv.tiles) do if t.shown then visible = visible + 1 end end
 assert(visible == 40, "preview 40 squares, got " .. visible)
 pv.typeB[4].scripts.OnClick(pv.typeB[4]) -- Magic: a druid cannot remove it
 assert(pv.msg.text:find("cannot remove"), "magic explained for druid")
+pv.clear.scripts.OnClick(pv.clear)
+-- two debuffs on one member: the second takes the right half; a click removes the one the button can remove
+for _, b in ipairs(pv.sizeB) do if b.size == 5 then b.scripts.OnClick(b) end end
+local rnd = math.random
+math.random = function() return 2 end -- every test debuff goes to member 2
+for _, ty in ipairs({ 1, 2, 1, 2, 1 }) do pv.typeB[ty].scripts.OnClick(pv.typeB[ty]) end -- curse, poison, curse, poison, curse
+math.random = rnd
+local t2 = pv.tiles[2]
+assert(t2.icon.shown and t2.parts[2].shown and t2.parts[3].shown and t2.parts[4].shown, "five debuffs: four pieces shown")
+t2.scripts.OnClick(t2, "LeftButton")
+assert(pv.msg.text:find("removed") and t2.parts[4].shown, "one curse gone: the fifth slides in, still four")
+t2.scripts.OnClick(t2, "RightButton")
+assert(pv.msg.text:find("Corrosive Poison") and t2.parts[3].shown and not t2.parts[4].shown, "a poison gone: three pieces")
+math.random = function() return 2 end
+pv.typeB[4].scripts.OnClick(pv.typeB[4]) -- magic: a druid cannot remove it, it takes no piece
+math.random = rnd
+assert(not t2.parts[4].shown, "a debuff you cannot remove never takes a piece")
 pv.clear.scripts.OnClick(pv.clear)
 _G.ForeverCleanseOptions.scripts.OnHide()
 assert(not pv.shown, "preview hides with the options")
@@ -265,5 +295,22 @@ W.cursor = 200; grip.scripts.OnUpdate(grip)
 assert(ForeverCleanseDB.scale > 100 and grip.scripts.OnUpdate, "grip scales while held, scale " .. ForeverCleanseDB.scale)
 W.held = false; grip.scripts.OnUpdate(grip)
 assert(grip.scripts.OnUpdate == nil, "grip lets go when the button is released")
+-- sound: one native registration per unit and removable spell ID, none for types the class cannot remove; off removes them all
+local live, curse = 0, false
+for _, info in pairs(W.sounds) do live = live + 1; if info.spellID == 14868 then curse = true end; assert(info.unitToken and info.soundFileID, "sound info") end
+assert(live > 100 and not curse, "paladin: poison/disease/magic sounds, no curses, got " .. live)
+local soundBtn
+for _, f in ipairs(W.frames) do if f.parent == opt and f.t and f.t.text == "Sound when a debuff lands" then soundBtn = f end end
+assert(soundBtn, "sound option exists")
+soundBtn.scripts.OnClick(soundBtn)
+assert(not ForeverCleanseDB.sound and next(W.sounds) == nil, "sound off removes every registration")
+soundBtn.scripts.OnClick(soundBtn)
+assert(ForeverCleanseDB.sound and next(W.sounds) and #W.played >= 1, "sound back on: registered again, plays once")
+local dingBtn
+for _, f in ipairs(W.frames) do if f.parent == opt and f.t and f.t.text == "Ding" then dingBtn = f end end
+assert(dingBtn, "sound choices exist")
+dingBtn.scripts.OnClick(dingBtn)
+assert(ForeverCleanseDB.soundFile == 567458 and W.played[#W.played] == 567458, "picking a sound saves it and plays it")
+for _, info in pairs(W.sounds) do assert(info.soundFileID == 567458, "registrations use the picked sound") end
 for _, p in ipairs(W.printed) do assert(not p:find("decorate:"), "decorate failed: " .. p) end
 print_real("addon: tutte le prove ok")
