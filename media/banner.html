@@ -47,13 +47,13 @@ html,body{margin:0;background:transparent}
 const NS = 'http://www.w3.org/2000/svg', C = 78;
 let seed = 7;
 const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-function crown(group, n, r0, len, fill, jitter) {
+function crown(group, n, r0, len, fill, jitter, dir = 1) {
   for (let i = 0; i < n; i++) {
     const a = (i + rnd() * .4) / n * Math.PI * 2, w = Math.PI * 2 / n * .9;
-    const L = len * (.7 + rnd() * .5), bend = 1.6 + rnd() * .8; // tip leans along the rim, clockwise
+    const L = len * (.7 + rnd() * .5), bend = dir * (1.6 + rnd() * .8); // tip leans along the rim (dir 1 clockwise, -1 the other way)
     const p = (ang, r) => [C + Math.cos(ang) * r, C + Math.sin(ang) * r];
     const [x1, y1] = p(a - w / 2, r0), [x2, y2] = p(a + w / 2, r0);
-    const [tx, ty] = p(a + bend * w, r0 + L), [c1x, c1y] = p(a + w * .5, r0 + L * .8), [c2x, c2y] = p(a + w * .9, r0 + L * .35);
+    const [tx, ty] = p(a + bend * w, r0 + L), [c1x, c1y] = p(a + dir * w * .5, r0 + L * .8), [c2x, c2y] = p(a + dir * w * .9, r0 + L * .35);
     const path = document.createElementNS(NS, 'path');
     path.setAttribute('d', `M${x1} ${y1} Q${c1x} ${c1y} ${tx} ${ty} Q${c2x} ${c2y} ${x2} ${y2} Z`);
     path.setAttribute('fill', fill); path.setAttribute('opacity', jitter ? .75 + rnd() * .25 : 1);
@@ -64,7 +64,22 @@ const halo = document.getElementById('halo'), flames = document.getElementById('
 const disc = (g, r, fill) => { const c = document.createElementNS(NS, 'circle'); c.setAttribute('cx', C); c.setAttribute('cy', C); c.setAttribute('r', r); c.setAttribute('fill', fill); g.appendChild(c); };
 disc(halo, 60, 'url(#fl2)');
 crown(flames, 18, 41, 17, '#4a0e8f', true);
+crown(flames, 14, 41, 15, '#6a1bc0', true, -1); // counter-turning tongues woven through
 crown(flames, 22, 42, 12, '#9b34f5', true);
+crown(flames, 16, 42, 10, '#c77dff', true, -1);
+// thin spiral strands crossing over and under the tongues
+for (let k = 0; k < 4; k++) {
+  const start = k * Math.PI / 2 + rnd() * .5, sweep = 2.2 + rnd() * .8, dir = k % 2 ? -1 : 1, pts = [];
+  for (let t = 0; t <= 1.0001; t += .05) {
+    const ang = start + dir * sweep * t, r = 45 + 9 * Math.sin(t * Math.PI) * (k % 2 ? 1 : .7);
+    pts.push((C + Math.cos(ang) * r).toFixed(1) + ' ' + (C + Math.sin(ang) * r).toFixed(1));
+  }
+  const s = document.createElementNS(NS, 'path');
+  s.setAttribute('d', 'M' + pts.join(' L'));
+  s.setAttribute('fill', 'none'); s.setAttribute('stroke', k % 2 ? '#e3a6ff' : '#b04bff');
+  s.setAttribute('stroke-width', k % 2 ? 2.2 : 3.2); s.setAttribute('stroke-linecap', 'round');
+  flames.appendChild(s);
+}
 crown(flames, 26, 43, 7, '#efb3ff', true);
 disc(flames, 46, '#c46bff');
 </script>
