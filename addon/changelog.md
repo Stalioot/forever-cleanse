@@ -1,3 +1,9 @@
+### 0.2.0
+
+- Sound alert: the game itself plays a sound when a debuff you can remove lands, also in combat. Pick one of four game sounds (Flag, Ding, Bell, Ready) in the options; turn it off with the check box.
+- Several debuffs on one member: up to four share the square, the icon is cut in one piece each in its own colour (half and half, then quarters). When one is removed the next one moves in.
+- Preview: test debuffs now stack on members (add as many as you like), with a few different icons per type.
+
 ### 0.1.0
 
 First beta.

@@ -1,6 +1,6 @@
 -- Forever Cleanse: one square per group member. The game itself draws the debuffs you can remove
 -- (AuraContainer, filter HARMFUL|RAID_PLAYER_DISPELLABLE) and a click casts the right spell (secure button).
--- Rules found with the probes (PERCORSO.md, step 1):
+-- Rules found with in-game probes:
 --   * in combat Lua cannot read auras at all, so it never knows who is afflicted;
 --   * nothing may be anchored TO an AuraContainer (the container may be anchored to us);
 --   * protected frames move, resize and change attributes only out of combat.
@@ -378,7 +378,7 @@ end
 -- ponytail: a raid Paladin means ~1100 IDs x 40 units; and an AoE curse on 20 people plays 20 overlapping sounds (each registration throttles alone).
 -- the game's own sound files (IDs as used by DBM): PvP flag taken, ding, night elf bell, ready check
 local SOUNDS = { { 569200, "sFlag" }, { 567458, "sDing" }, { 566558, "sBell" }, { 567478, "sReady" } }
-local soundIds, soundKey, soundErr = {}, nil, nil
+local soundIds, soundKey = {}, nil
 local function syncSounds(list)
   local add = C_UnitAuras and C_UnitAuras.AddAuraSound
   local remove = C_UnitAuras and (C_UnitAuras.RemoveAuraSound or C_UnitAuras.RemovePrivateAuraAppliedSound)
@@ -392,7 +392,7 @@ local function syncSounds(list)
   if k == soundKey then return end
   soundKey = k
   for _, id in ipairs(soundIds) do if remove then pcall(remove, id) end end
-  soundIds, soundErr = {}, nil
+  soundIds = {}
   if not DB.sound then return end
   for _, ty in ipairs({ "Curse", "Poison", "Disease", "Magic" }) do
     for _, row in ipairs(types[ty] and ns.DEBUFFS[ty] or {}) do
@@ -400,7 +400,7 @@ local function syncSounds(list)
         if not DB.ignore[row[i]] then
           for _, u in ipairs(us) do
             local ok, id = pcall(add, 0, { unitToken = u, spellID = row[i], soundFileID = DB.soundFile, outputChannel = "Master", throttleSeconds = 2 })
-            if ok and id then soundIds[#soundIds + 1] = id elseif not soundErr then soundErr = u .. ": " .. tostring(ok and "nil" or id) end
+            if ok and id then soundIds[#soundIds + 1] = id end
           end
         end
       end
@@ -561,7 +561,6 @@ local function pvTile(i)
     if k == 2 then p.mark = p:CreateTexture(nil, "ARTWORK", nil, 4); p.mark:SetSize(8, 8); p.mark:SetPoint("TOPRIGHT", -2, -2) end
     t.parts[k] = p
   end
-  t.half = t.parts[2]
   t.pulse = t:CreateAnimationGroup()
   t.pulseA = t.pulse:CreateAnimation("Alpha"); t.pulseA:SetTarget(t.edge); t.pulseA:SetDuration(0.55)
   t.pulse:SetLooping("BOUNCE")
@@ -1250,7 +1249,6 @@ ev:SetScript("OnEvent", function(_, e, arg)
     DB = ForeverCleanseDB
     for k, v in pairs(DEFAULTS) do if DB[k] == nil then DB[k] = type(v) == "table" and CopyTable(v) or v end end
     DB.theme = "shadow" -- the light theme was dropped
-    DB.log, DB.art = nil, nil -- leftovers of the v0.1 in-game test
     if not L[DB.lang] then DB.lang = "en" end
     return
   end
@@ -1277,6 +1275,5 @@ SlashCmdList.FOREVERCLEANSE = function(msg)
   elseif msg == "reset" then
     later(function() DB.point, DB.scale = nil, 100; main:ClearAllPoints(); main:SetPoint("CENTER", UIParent, "CENTER", -300, 120); layout() end)
   elseif msg == "help" then say(tr("help"))
-  elseif msg == "sound" then say("sound: " .. #soundIds .. " registrations" .. (soundErr and (", first error " .. soundErr) or "")) -- for testing
   else toggleOptions() end
 end
