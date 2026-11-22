@@ -91,7 +91,9 @@ function PlaySoundFile(f) W.played[#W.played + 1] = f end
 W.knownIds = {}
 local ids = {}
 C_Spell = { GetSpellInfo = function(n)
-  if type(n) == "number" then return { spellID = n, name = "Spell" .. n } end
+  local byId = { [475] = "Remove Lesser Curse", [2782] = "Remove Curse", [2893] = "Abolish Poison", [526] = "Cure Poison", [527] = "Dispel Magic",
+    [552] = "Abolish Disease", [528] = "Cure Disease", [4987] = "Cleanse", [1152] = "Purify", [1714] = "Curse of Tongues", [13526] = "Corrosive Poison" }
+  if type(n) == "number" then return { spellID = n, name = (W.lang == "de" and byId[n] and ("DE " .. byId[n])) or byId[n] or ("Spell" .. n) } end
   ids[n] = ids[n] or (#ids + 1000 + n:len())
   if W.known[n] then W.knownIds[ids[n]] = true end
   return { spellID = ids[n], name = n }
@@ -99,6 +101,7 @@ end }
 
 local NS = {}
 assert(loadfile((CORE:gsub("Core%.lua$", "Debuffs.lua"))))("ForeverCleanse", NS)
+assert(loadfile((CORE:gsub("Core%.lua$", "Locales.lua"))))("ForeverCleanse", NS)
 assert(loadfile(CORE))("ForeverCleanse", NS)
 local evf
 for _, f in ipairs(W.frames) do if f.scripts.OnEvent then evf = f end end
@@ -320,5 +323,14 @@ assert(dingBtn, "sound choices exist")
 dingBtn.scripts.OnClick(dingBtn)
 assert(ForeverCleanseDB.soundFile == 567458 and W.played[#W.played] == 567458, "picking a sound saves it and plays it")
 for _, info in pairs(W.sounds) do assert(info.soundFileID == 567458, "registrations use the picked sound") end
+-- other languages: the texts follow the language, the spells are cast by the client's own names (German client here)
+ForeverCleanseDB.lang = "de"; _G.ForeverCleanseOptions.refresh()
+local de
+for _, f in ipairs(W.frames) do if f.parent == _G.ForeverCleanseOptions and f.t and f.t.text == "Hinzufügen" then de = f end end
+assert(de, "options in German")
+W.lang, W.class, W.known = "de", "DRUID", { ["DE Remove Curse"] = true, ["DE Abolish Poison"] = true }
+fire("SPELLS_CHANGED")
+assert(t1.attrs.spell1 == "DE Remove Curse" and t1.attrs.spell2 == "DE Abolish Poison", "German client: German spell names on the buttons, got " .. tostring(t1.attrs.spell1))
+ForeverCleanseDB.lang, W.lang = "en", nil
 for _, p in ipairs(W.printed) do assert(not p:find("decorate:"), "decorate failed: " .. p) end
 print_real("addon: tutte le prove ok")

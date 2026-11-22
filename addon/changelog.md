@@ -1,3 +1,9 @@
+### 0.3.0
+
+- Ten languages: English, Deutsch, Español, Français, Italiano, Português, Русский, 한국어, 简体中文, 繁體中文. The first time, the addon follows your game client; change it in the options.
+- Works on every game client: spells are found by ID and cast with your client's own names (before, only the English client could cast).
+- Debuff types and the preview's test debuffs use your client's words.
+
 ### 0.2.2
 
 - The enemy buff box (Purge / Dispel Magic on your target) is gone: the game already shows your target's buffs you can remove.

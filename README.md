@@ -38,7 +38,7 @@ Open them with the gear at the top right of the bar, a right-click on the bar, o
 - **Grid**: *Everyone* (all squares, lit when needed) or *Only afflicted* (a square appears only when there is something to remove).
 - **Alerts**: pulsing border when a debuff lands, a **sound** played by the game itself (also in combat, pick one of four), fade out of range.
 - **Ignore list**: debuffs you never want to see. Type a name or spell ID, or press **Browse** to pick one from every Curse, Poison, Disease and Magic debuff of the game (all its ranks are added). Dreamless Sleep and Mind Vision are there from the start.
-- **Size** (60–200%, also with the corner grip), **bar opacity**, **lock**, **language** (English, Italiano).
+- **Size** (60–200%, also with the corner grip), **bar opacity**, **lock**, **language**: English, Deutsch, Español, Français, Italiano, Português, Русский, 한국어, 简体中文, 繁體中文 (the first time it follows your game client).
 
 Commands: `/fc` options · `/fc lock` · `/fc reset` · `/fc help`.
 

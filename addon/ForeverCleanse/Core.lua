@@ -13,7 +13,7 @@ local FILTER = "HARMFUL|RAID_PLAYER_DISPELLABLE"
 local PER_ROW, GAP, PAD, KEY_H = 5, 2, 3, 20
 
 local DEFAULTS = {
-  theme = "shadow", mode = "only", pulse = true, sound = true, soundFile = 569200, range = true, scale = 100, barAlpha = 82, lock = false, lang = "en",
+  theme = "shadow", mode = "only", pulse = true, sound = true, soundFile = 569200, range = true, scale = 100, barAlpha = 82, lock = false, -- lang: the client's language the first time
   -- harmless debuffs nobody wants removed (spell IDs from the Classic data; more can be added in the options)
   ignore = { [15822] = "Dreamless Sleep", [24360] = "Greater Dreamless Sleep", [2096] = "Mind Vision", [10909] = "Mind Vision" },
   seen = {}, -- debuff name -> spell ID, learned out of combat, so the ignore list accepts names
@@ -32,6 +32,13 @@ local BUTTONS = {
   PALADIN = { { "Cleanse", "Purify" } },
   SHAMAN = { { "Cure Poison" }, { "Cure Disease" } },
 }
+-- one spell ID per name: the game gives the name in the client's language (German, Russian...) for casting and labels
+local SPELL_ID = { ["Remove Lesser Curse"] = 475, ["Remove Curse"] = 2782, ["Abolish Poison"] = 2893, ["Cure Poison"] = 526,
+  ["Dispel Magic"] = 527, ["Abolish Disease"] = 552, ["Cure Disease"] = 528, ["Cleanse"] = 4987, ["Purify"] = 1152 }
+local function loc(name)
+  local ok, si = pcall(C_Spell.GetSpellInfo, SPELL_ID[name] or name)
+  return ok and type(si) == "table" and si.name or name
+end
 local REMOVES = {
   ["Remove Lesser Curse"] = { "Curse" }, ["Remove Curse"] = { "Curse" },
   ["Abolish Poison"] = { "Poison" }, ["Cure Poison"] = { "Poison" },
@@ -61,7 +68,8 @@ local L = {
     info = "How it works",
     iLit = "Lit square: a debuff you can remove",
     browse = "Browse", reset = "Reset", clearAll = "Clear all", search = "Search", pick = "Click a debuff: it goes in the box, then Add.",
-    iMove = "Drag the top bar to move", iSize = "Drag the corner to resize", iOpt = "Options: gear or /fc" },
+    iMove = "Drag the top bar to move", iSize = "Drag the corner to resize", iOpt = "Options: gear or /fc",
+    tCurse = "Curse", tPoison = "Poison", tDisease = "Disease", tMagic = "Magic", left = "Left", right = "Right" },
   it = { options = "Opzioni", grid = "Griglia", everyone = "Tutti", only = "Solo chi ha un debuff",
     alerts = "Avvisi", pulse = "Bordo che pulsa", sound = "Suono quando arriva un debuff", sFlag = "Bandiera", sDing = "Ding", sBell = "Campana", sReady = "Pronti", range = "Sbiadisci fuori portata",
     ignore = "Ignora questi debuff", add = "Aggiungi", size = "Dimensione", barAlpha = "Opacità della barra", lock = "Blocca la posizione", lang = "Lingua",
@@ -74,11 +82,15 @@ local L = {
     info = "Come funziona",
     iLit = "Casella accesa: un debuff che puoi togliere",
     browse = "Sfoglia", reset = "Ripristina", clearAll = "Togli tutti", search = "Cerca", pick = "Clicca un debuff: va nella casella, poi Aggiungi.",
-    iMove = "Trascina la barra per spostare", iSize = "Trascina l'angolo per ingrandire", iOpt = "Opzioni: ingranaggio o /fc" },
+    iMove = "Trascina la barra per spostare", iSize = "Trascina l'angolo per ingrandire", iOpt = "Opzioni: ingranaggio o /fc",
+    tCurse = "Curse", tPoison = "Poison", tDisease = "Disease", tMagic = "Magic", left = "Sinistro", right = "Destro" },
 }
 
+for code, t in pairs(ns.LOCALES or {}) do L[code] = t end -- Locales.lua: the other languages
+
 local DB, T
-local function tr(k) return L[DB and DB.lang or "en"][k] or L.en[k] end
+local function tr(k) return (L[DB and DB.lang or "en"] or L.en)[k] or L.en[k] end
+local function tyName(ty) return tr("t" .. ty) end
 local function say(msg) print("|cff7fd4b0Forever Cleanse|r " .. msg) end
 local function hex(h) return tonumber(h:sub(1, 2), 16) / 255, tonumber(h:sub(3, 4), 16) / 255, tonumber(h:sub(5, 6), 16) / 255 end
 local function paint(tex, c, a) tex:SetColorTexture(c[1], c[2], c[3], a or c[4] or 1) end
@@ -108,8 +120,17 @@ local function font(file, size)
   return fonts[key]
 end
 
+-- a label that must fit a small button: the font shrinks a little for long words (Malédiction, Проклятие)
+local function fit(fs, text, file, size, maxW)
+  fs:SetText(text)
+  for sz = size, 9, -1 do
+    fs:SetFontObject(font(file, sz))
+    if fs:GetStringWidth() <= maxW then return end
+  end
+end
+
 local function knows(name)
-  local ok, info = pcall(C_Spell.GetSpellInfo, name)
+  local ok, info = pcall(C_Spell.GetSpellInfo, loc(name))
   local id = ok and type(info) == "table" and info.spellID
   return id and IsPlayerSpell(id) and true or false
 end
@@ -297,14 +318,14 @@ end
 -- the key strip is drawn on the real frame and on the preview, so it takes the strip as argument
 -- the spell's own icon (by id from the game, nothing bundled) and "Curse · Poison" in the type colours
 local function spellTexture(name)
-  local ok, si = pcall(C_Spell.GetSpellInfo, name)
+  local ok, si = pcall(C_Spell.GetSpellInfo, SPELL_ID[name] or name)
   return ok and type(si) == "table" and si.iconID or "Interface\\Icons\\INV_Misc_QuestionMark"
 end
 local function typeNames(spell)
   local out = {}
   for _, ty in ipairs(REMOVES[spell] or {}) do
     local c = TYPE_COLOR[ty]
-    out[#out + 1] = ("|cff%02x%02x%02x%s|r"):format(c[1] * 255, c[2] * 255, c[3] * 255, ty)
+    out[#out + 1] = ("|cff%02x%02x%02x%s|r"):format(c[1] * 255, c[2] * 255, c[3] * 255, tyName(ty))
   end
   return table.concat(out, " · ")
 end
@@ -441,9 +462,9 @@ local function layout()
       t:SetPoint("TOPLEFT", grid, "TOPLEFT", col * (w + GAP), -row * (w + GAP))
       t:SetSize(w, w)
       t:SetAttribute("unit", unit)
-      t:SetAttribute("spell1", spells.left)
+      t:SetAttribute("spell1", spells.left and loc(spells.left))
       t:SetAttribute("type2", spells.right and "spell" or nil)
-      t:SetAttribute("spell2", spells.right)
+      t:SetAttribute("spell2", spells.right and loc(spells.right))
       t.unit = unit
       t.unitName = UnitName(unit)
       local _, class = UnitClass(unit)
@@ -500,8 +521,9 @@ local PV_NAMES = { "Nimra","Grumok", "Elyra", "Thadrin", "Vessa", "Korgan", "Lir
   "Ilsa", "Fennick", "Rowan", "Zuhra", "Kael", "Mirth", "Gorrin", "Anwen", "Bolt", "Cerys", "Dagna", "Eamon", "Freya", "Gideon", "Hesk",
   "Iona", "Jorvik", "Kestra", "Lugh", "Maeve", "Nox", "Orla", "Pike", "Quill", "Rusk", "Sable" }
 local PV_CLASSES = { "WARRIOR", "PRIEST", "HUNTER", "ROGUE", "WARLOCK", "DRUID", "SHAMAN", "PALADIN", "MAGE" }
-local PV_DEBUFF = { Curse = { "Curse of Tongues", "Spell_Shadow_CurseOfTounges" }, Poison = { "Corrosive Poison", "Spell_Nature_CorrosiveBreath" },
-  Disease = { "Creeping Plague", "Spell_Shadow_CreepingPlague" }, Magic = { "Slow", "Spell_Nature_Slow" } }
+local PV_DEBUFF = { Curse = { "Curse of Tongues", "Spell_Shadow_CurseOfTounges", 1714 }, Poison = { "Corrosive Poison", "Spell_Nature_CorrosiveBreath", 13526 },
+  Disease = { "Creeping Plague", "Spell_Shadow_CreepingPlague", 20512 }, Magic = { "Slow", "Spell_Nature_Slow", 246 } }
+local function pvDebuff(ty) local ok, si = pcall(C_Spell.GetSpellInfo, PV_DEBUFF[ty][3]); return ok and type(si) == "table" and si.name or PV_DEBUFF[ty][1] end
 local TYPE_ORDER = { "Curse", "Poison", "Disease", "Magic" }
 local pv
 local pvState = { size = 5, deb = {} } -- deb[i] = { type, type }: up to two debuffs per member
@@ -573,12 +595,12 @@ local function pvTile(i)
     for k, ty in ipairs(list) do if not hit and canRemove(ty) and removes(spell or "", ty) then hit = k end end
     if not spell then pv.msg:SetText(tr(spells.left and "noRight" or "noSpell"))
     elseif pvFar(i) then pv.msg:SetText(tr("far"):format(pvName(i)))
-    elseif not vis[1] then pv.msg:SetText(tr("nothing"):format(spell))
-    elseif not hit then pv.msg:SetText(tr("wrong"):format(spell, vis[1]))
+    elseif not vis[1] then pv.msg:SetText(tr("nothing"):format(loc(spell)))
+    elseif not hit then pv.msg:SetText(tr("wrong"):format(loc(spell), tyName(vis[1])))
     else
       local ty = table.remove(list, hit)
       if not list[1] then pvState.deb[i] = nil end
-      pv.msg:SetText(tr("removed"):format(spell, PV_DEBUFF[ty][1])); pvRender()
+      pv.msg:SetText(tr("removed"):format(loc(spell), pvDebuff(ty))); pvRender()
     end
   end)
   pv.tiles[i] = t
@@ -591,7 +613,7 @@ local function pvAdd(ty)
   pvState.deb[i] = pvState.deb[i] or {}
   table.insert(pvState.deb[i], ty)
   if DB.sound and canRemove(ty) then PlaySoundFile(DB.soundFile, "Master") end
-  pv.msg:SetText(canRemove(ty) and (pvName(i) .. ": " .. PV_DEBUFF[ty][1]) or tr("cant"):format(pvName(i) .. ", " .. ty))
+  pv.msg:SetText(canRemove(ty) and (pvName(i) .. ": " .. pvDebuff(ty)) or tr("cant"):format(pvName(i) .. ", " .. tyName(ty)))
   pvRender()
 end
 
@@ -624,6 +646,7 @@ local function makePreview()
   pv.title:SetPoint("TOPLEFT", 6, -5)
   for n, ty in ipairs(TYPE_ORDER) do
     local b = pvButton(pv.bar, 61, ty)
+    b.ty = ty
     b:SetPoint("TOPLEFT", 6 + (n - 1) * 63, -22)
     b.sw = b:CreateTexture(nil, "ARTWORK"); b.sw:SetSize(8, 8); b.sw:SetPoint("LEFT", 5, 0)
     local c = TYPE_COLOR[ty]; b.sw:SetColorTexture(c[1], c[2], c[3], 1)
@@ -713,6 +736,7 @@ pvRender = function()
   pv:SetSize(width + PAD * 2, PAD + KEY_H + GAP + gh + PAD)
   pv:SetScale(DB.scale / 100)
   pv.title:SetText(tr("preview"))
+  for _, b in ipairs(pv.typeB) do fit(b.t, tyName(b.ty), "BarlowCondensed-SemiBold.ttf", 12, 40) end
   pv.clear.t:SetText(tr("clear"))
   pv.hint:SetText(tr("pvHint"))
   for _, b in ipairs(pv.sizeB) do
@@ -819,14 +843,14 @@ local function makeOptions()
   local gear = row()
   gear.ic = gear:CreateTexture(nil, "ARTWORK"); gear.ic:SetSize(20, 20); gear.ic:SetPoint("LEFT", 12, 0); setGear(gear.ic)
   local function spellIcon(tex, name)
-    local ok, si = pcall(C_Spell.GetSpellInfo, name)
+    local ok, si = pcall(C_Spell.GetSpellInfo, SPELL_ID[name] or name)
     tex:SetTexture(ok and type(si) == "table" and si.iconID or "Interface\\Icons\\INV_Misc_QuestionMark")
   end
   local function colours(spell) -- "Curse · Poison" in their own colours
     local out = {}
     for _, ty in ipairs(REMOVES[spell] or {}) do
       local c = TYPE_COLOR[ty]
-      out[#out + 1] = ("|cff%02x%02x%02x%s|r"):format(c[1] * 255, c[2] * 255, c[3] * 255, ty)
+      out[#out + 1] = ("|cff%02x%02x%02x%s|r"):format(c[1] * 255, c[2] * 255, c[3] * 255, tyName(ty))
     end
     return table.concat(out, " · ")
   end
@@ -841,10 +865,10 @@ local function makeOptions()
     lit.edge:SetColorTexture(c[1], c[2], c[3], 1); lit.mark:SetColorTexture(c[1], c[2], c[3], 1)
     lit.ic:SetTexture("Interface\\Icons\\" .. PV_DEBUFF[ty][2])
     lit.t:SetText(tr("iLit"))
-    if spells.left then spellIcon(left.ic, spells.left); left.t:SetText(spells.left .. "\n" .. colours(spells.left))
+    if spells.left then spellIcon(left.ic, spells.left); left.t:SetText(loc(spells.left) .. "\n" .. colours(spells.left))
     else left.ic:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark"); left.t:SetText(tr("noSpell")) end
     right:SetShown(spells.right ~= nil)
-    if spells.right then spellIcon(right.ic, spells.right); right.t:SetText(spells.right .. "\n" .. colours(spells.right)) end
+    if spells.right then spellIcon(right.ic, spells.right); right.t:SetText(loc(spells.right) .. "\n" .. colours(spells.right)) end
     move.t:SetText(tr("iMove")); size.t:SetText(tr("iSize")); gear.t:SetText(tr("iOpt"))
     local iy = -40
     for _, r in ipairs(info.rows) do
@@ -987,7 +1011,7 @@ local function makeOptions()
     b.bg = b:CreateTexture(nil, "BACKGROUND"); b.bg:SetAllPoints()
     b.sw = b:CreateTexture(nil, "ARTWORK"); b.sw:SetSize(8, 8); b.sw:SetPoint("LEFT", 6, 0)
     local c = TYPE_COLOR[ty]; b.sw:SetColorTexture(c[1], c[2], c[3], 1)
-    b.t = b:CreateFontString(nil, "OVERLAY"); b.t:SetFontObject(font("BarlowCondensed-SemiBold.ttf", 13)); b.t:SetPoint("LEFT", b.sw, "RIGHT", 4, 0); b.t:SetText(ty)
+    b.t = b:CreateFontString(nil, "OVERLAY"); b.t:SetFontObject(font("BarlowCondensed-SemiBold.ttf", 13)); b.t:SetPoint("LEFT", b.sw, "RIGHT", 4, 0); b.t:SetText(tyName(ty))
     b:SetScript("OnClick", function() br.state.type, br.state.off = ty, 0; br.paint() end)
     b.ty = ty
     br.tabs[n] = b
@@ -1025,6 +1049,7 @@ local function makeOptions()
   br.paint = function()
     local st = br.state
     for _, b in ipairs(br.tabs) do
+      fit(b.t, tyName(b.ty), "BarlowCondensed-SemiBold.ttf", 13, 42)
       if b.ty == st.type then b.bg:SetColorTexture(acc[1], acc[2], acc[3], 1); b.t:SetTextColor(0, 0, 0)
       else b.bg:SetColorTexture(line[1], line[2], line[3], 0.45); b.t:SetTextColor(soft[1], soft[2], soft[3]) end
     end
@@ -1095,7 +1120,26 @@ local function makeOptions()
   slider("barAlpha", "barAlpha", 0, 100, 5)
   check("lock", "lock")
   y = y - 4
-  label("lang"); seg("lang", { { "en", nil, "English" }, { "it", nil, "Italiano" } })
+  label("lang")
+  do -- every language in its own words, 5 per row
+    local langs = ns.LANG_ORDER or { { "en", "English" }, { "it", "Italiano" } }
+    local bs = {}
+    for i, lg in ipairs(langs) do
+      local col, row = (i - 1) % 5, math.floor((i - 1) / 5)
+      local b = CreateFrame("Button", nil, opt); b:SetSize(54 - (col < 4 and 1 or 0), 22); b:SetPoint("TOPLEFT", 14 + col * 54.4, y - row * 23)
+      b.bg = b:CreateTexture(nil, "BACKGROUND"); b.bg:SetAllPoints()
+      b.t = b:CreateFontString(nil, "OVERLAY"); b.t:SetFontObject(font("BarlowCondensed-SemiBold.ttf", 12)); b.t:SetPoint("CENTER"); b.t:SetText(lg[2])
+      b:SetScript("OnClick", function() DB.lang = lg[1]; apply() end)
+      bs[i] = b
+    end
+    y = y - math.ceil(#langs / 5) * 23 - 9
+    widgets[#widgets + 1] = function()
+      for i, lg in ipairs(langs) do
+        if DB.lang == lg[1] then bs[i].bg:SetColorTexture(acc[1], acc[2], acc[3], 1); bs[i].t:SetTextColor(0, 0, 0)
+        else bs[i].bg:SetColorTexture(line[1], line[2], line[3], 0.45); bs[i].t:SetTextColor(soft[1], soft[2], soft[3]) end
+      end
+    end
+  end
   widgets[#widgets + 1] = function() title:SetText("Forever Cleanse · " .. tr("options")) end
   widgets[#widgets + 1] = paintInfo -- follows the language switch
 
@@ -1138,8 +1182,8 @@ local function build()
   key:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
     GameTooltip:AddLine("Forever Cleanse")
-    if spells.left then GameTooltip:AddLine("Left: " .. spells.left, 1, 1, 1) end
-    if spells.right then GameTooltip:AddLine("Right: " .. spells.right, 1, 1, 1) end
+    if spells.left then GameTooltip:AddLine(tr("left") .. ": " .. loc(spells.left), 1, 1, 1) end
+    if spells.right then GameTooltip:AddLine(tr("right") .. ": " .. loc(spells.right), 1, 1, 1) end
     GameTooltip:AddLine(tr("hint"), 0.65, 0.63, 0.6)
     GameTooltip:Show()
   end)
@@ -1228,6 +1272,7 @@ ev:SetScript("OnEvent", function(_, e, arg)
     DB.theme = "shadow" -- the light theme was dropped
     DB.purge = nil -- the enemy buff box was dropped in 0.2.2 (the game has its own)
     for id in pairs(XP_AURAS) do DB.ignore[id] = nil end -- they are always hidden, not part of the list
+    if DB.lang == nil then DB.lang = (ns.LOCALE_MAP or {})[GetLocale and GetLocale() or ""] or "en" end
     if not L[DB.lang] then DB.lang = "en" end
     return
   end

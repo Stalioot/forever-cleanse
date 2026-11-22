@@ -2,10 +2,20 @@
 ## Title: Forever Cleanse
 ## Notes: Decurse and dispel made easy: a square for each group member lights up with the debuffs you can remove; click it to cast the right spell. /fc
 ## Notes-itIT: Decurse e dispel facili: una casella per ogni compagno si accende coi debuff che puoi togliere; cliccala per lanciare la spell giusta. /fc
+## Notes-deDE: Flüche und Magie leicht entfernen: Ein Feld pro Gruppenmitglied leuchtet bei Debuffs auf, die du entfernen kannst; ein Klick wirkt den richtigen Zauber. /fc
+## Notes-frFR: Décurse et dissipation faciles : une case par membre du groupe s'allume avec les debuffs que tu peux retirer ; clique pour lancer le bon sort. /fc
+## Notes-esES: Quitar maldiciones y magia fácil: una casilla por miembro del grupo se enciende con los debuffs que puedes quitar; haz clic para lanzar el hechizo correcto. /fc
+## Notes-esMX: Quitar maldiciones y magia fácil: una casilla por miembro del grupo se enciende con los debuffs que puedes quitar; haz clic para lanzar el hechizo correcto. /fc
+## Notes-ptBR: Remover maldições e magia fácil: um quadro por membro do grupo acende com os debuffs que você pode remover; clique para lançar o feitiço certo. /fc
+## Notes-ruRU: Простое снятие дебаффов: ячейка каждого участника группы загорается, когда на нём дебафф, который вы можете снять; щелчок применяет нужное заклинание. /fc
+## Notes-koKR: 쉬운 해제: 내가 해제할 수 있는 디버프가 걸린 파티원 칸이 켜지고, 클릭하면 알맞은 주문을 시전합니다. /fc
+## Notes-zhCN: 轻松驱散：队友身上有你能驱散的减益时，其格子会亮起；点击即可施放正确的法术。/fc
+## Notes-zhTW: 輕鬆驅散：隊友身上有你能驅散的減益時，其格子會亮起；點擊即可施放正確的法術。/fc
 ## Author: Staliot
 ## IconTexture: Interface\AddOns\ForeverCleanse\Media\logo
-## Version: 0.2.2
+## Version: 0.3.0
 ## SavedVariables: ForeverCleanseDB
 
 Debuffs.lua
+Locales.lua
 Core.lua
